@@ -33,6 +33,16 @@ def isVertexCritical(vi, viPrev, viNext):
     p2 = {'x':viNext[0],'y':viNext[1]} 
     return ((line['y1'] - line['y2'])*(p1['x'] - line['x1'])+(line['x2']- line['x1'])*(p1['y']-line['y1']))*((line['y1']-line['y2'])*(p2['x']-line['x1'])+(line['x2']-line['x1'])*(p2['y']-line['y1']))>0
 
+def bothPointsOnSameSide(vi, p1, p2):
+    transmitterX = vertices.transmitterCoordsX
+    transmitterY = vertices.transmitterCoordsY
+    transmitterCoords = (transmitterX, transmitterY)
+    # print(p1, p2)
+    line = {'x1': transmitterX,'y1':transmitterY,'x2':vi[0],'y2':vi[1]}
+    p1 = {'x':p1[0],'y':p1[1]}
+    p2 = {'x':p2[0],'y':p2[1]} 
+    return ((line['y1'] - line['y2'])*(p1['x'] - line['x1'])+(line['x2']- line['x1'])*(p1['y']-line['y1']))*((line['y1']-line['y2'])*(p2['x']-line['x1'])+(line['x2']-line['x1'])*(p2['y']-line['y1']))>0
+
 def isLeftTurn(vi, viPrev, viNext):
     # given a vertex, determine if CW or CCW
     # returns True if CCW (left turn), returns False if CW (right turn)
@@ -43,11 +53,35 @@ def onPositiveSide(vi, viPrev):
     transmitterX = vertices.transmitterCoordsX
     transmitterY = vertices.transmitterCoordsY
     # given a vertex, determine if vPrev is on positive side of the ray 
-    # ray is defined as line connected transmitter coords to vi coords
+    # ray is defined as line connecting transmitter coords to vi coords
     line = {'x1': transmitterX,'y1':transmitterY,'x2':vi[0],'y2':vi[1]}
     p1 = {'x':viPrev[0],'y':viPrev[1]}
     return (( (line['y1'] - line['y2'])*(p1['x'] - line['x1'])+(line['x2']- line['x1'])*(p1['y']-line['y1']) )>0)
 
+# def rayIntersectsEdge(slope, b, edgeSegment):
+#     # If a critical ray intersects an edge segment, return the coords of intersection
+#     # otherwise return False
+#     edgeX1 = min(edgeSegment[0][0], edgeSegment[1][0])
+#     edgeX2 = max(edgeSegment[0][0], edgeSegment[1][0])
+#     edgeY1 = min(edgeSegment[0][1], edgeSegment[1][1])
+#     edgeY2 = max(edgeSegment[0][1], edgeSegment[1][1])
+#     transmitterX, transmitterY = vertices.transmitterCoordsX, vertices.transmitterCoordsY
+#     # if not (edgeX1 < transmitterX):
+#     y1, y2 = (slope)*edgeX1 + b, (slope)*edgeX2 + b       
+#     if (y1 > edgeY1 and y2 < edgeY2):
+#         slopeEdge = (edgeY2 - edgeY1)/(edgeX2 - edgeX1)
+#         bEdge = edgeY1 - slopeEdge*edgeX1
+#         b2, b1 = max(bEdge, b), min(bEdge, b)
+#         slope2, slope1 = max(slopeEdge, slope), min(slopeEdge, slope)
+#         print(slope, b, slopeEdge, bEdge)
+#         xInt = (b2 - b1) / (slope2 - slope1)
+#         yInt = (slopeEdge*xInt) + bEdge
+#         if (xInt < edgeX1 or xInt > edgeX2):
+#             return False
+#         q = (xInt, yInt)
+#         v_j_prev = (edgeX1, edgeY1)
+#         return (q, v_j_prev)
+#     return False
 # Step 1: Get critical vertices
 # ---------------------------------------------------------------------
 i=0
@@ -117,7 +151,7 @@ for vertex in verticesArray:
 
 # Step 2b: Apply +2/-2 rule
 # ---------------------------------------------------------------------
-# Record all edges and rays in polygon
+# Record all edges and critical rays in polygon
 edgeSegments=[]
 criticalRays=[]
 i=0
@@ -130,20 +164,91 @@ for vertex in verticesArray:
         viNextX, viNextY = verticesArray[0].ravel() 
     viNext = (viNextX, viNextY)
     i+=1
-    edgeSegment = {vi, viNext}
+    edgeSegment = [vi, viNext]
     edgeSegments.append(edgeSegment)
     if vertex in criticalVertices2:
-       # print("\n",vertex) #ummmm
-       criticalRay = {transmitterCoords, vi}
+       # print("\n",vertex) # ummmm
+       criticalRay = [transmitterCoords, vi]
        criticalRays.append(criticalRay)
 
+# Identify where critical rays intersect edge segments and apply rule
+plus2Points=[]
+minus2Points=[]
+qPoints=[]
 
+def rayIntersectsEdge(slopeRay, bRay, edge1, edge2):
+    # If a critical ray intersects an edge segment, return True
+    # otherwise return False
+    edgeX1 = min(edgeSegment[0][0], edgeSegment[1][0])
+    edgeX2 = max(edgeSegment[0][0], edgeSegment[1][0])
+    edgeY1 = min(edgeSegment[0][1], edgeSegment[1][1])
+    edgeY2 = max(edgeSegment[0][1], edgeSegment[1][1])
+    transmitterX, transmitterY = vertices.transmitterCoordsX, vertices.transmitterCoordsY
+    y1, y2 = (slopeRay*edgeX1)+bRay, (slopeRay*edgeX2)+bRay
+    if (y1 > edgeY1 and y2 < edgeY2):
+        return True  
+    return False
+
+    
+for edgeSegment in edgeSegments:
+    p1, p2 = edgeSegment[0], edgeSegment[1]
+    slopeEdge = (p2[1] - p1[1]) / (p2[0] - p1[0])
+    bEdge = p1[1] - (slopeEdge)*(p1[0])
+    transmitterX = vertices.transmitterCoordsX
+    transmitterY = vertices.transmitterCoordsY
+    for ray in criticalRays:
+        xRay, yRay = ray[1][0], ray[1][1]
+        raycoords = (xRay, yRay)
+        slopeRay = (yRay - transmitterY) / (xRay - transmitterX)
+        bRay = yRay - (slopeRay*xRay)
+        checkIntersection = rayIntersectsEdge(slopeRay, bRay, p1, p2)
+        if checkIntersection is True:
+            slope1, slope2 = min(slopeRay, slopeEdge), max(slopeRay, slopeEdge)
+            b1, b2 = min(bRay, bEdge), max(bRay, bEdge)
+            xInt = round((b2 - b1) / (slope2 - slope1), 1)
+            yInt = round((slopeEdge*xInt) + bEdge, 1)
+            q = (xInt, yInt)
+            # vjPrevX = min(edgeSegment[0][0], edgeSegment[1][0])
+            # vjPrevY = min(edgeSegment[0][1], edgeSegment[1][1])
+            vjPrev = p1
+            if not (q == p1 or q == p2): 
+                if not (((yRay and yInt>0) and yInt > yRay) or (yRay and yInt < 0) and (yInt < yRay)):
+                    qPoints.append(q) # graph is flipped so need to do a "not" operation for the right answer
+                    i=0
+                    for vertex in verticesArray:
+                        viX, viY = vertex.ravel()
+                        vi = (viX, viY)
+                        if vi == raycoords:
+                            if i > 0 and i < len(verticesArray):
+                                viPrevX, viPrevY = verticesArray[i-1].ravel()
+                                viPrev = (viPrevX, viPrevY)
+                            if bothPointsOnSameSide(vi, viPrev, vjPrev):
+                                minus2Points.append(q)
+                            else:
+                                plus2Points.append(q)
+                        i+=1
+for q in qPoints:
+    for vertex in criticalVertices2:
+        vX, vY = vertex.ravel()
+        vi = (vX, vY)
+        if q == vi:
+            qPoints.remove(q)
+            continue
+    qX, qY = int(q[0]), int(q[1])
+    if q in minus2Points:
+        cv2.circle(img, (qX, qY), 6, (175, 165, 50), -1)
+    elif q in plus2Points:
+        cv2.circle(img, (qX, qY), 6, (100, 200, 250), -1)
+
+# for vertex in verticesArray:
+#     x,y = vertex.ravel()
+#     plt.scatter(x, y)
+    
+plt.show()
+    
 
 # Display polygon
 # ---------------------------------------------------------------------
 cv2.imshow('polygon', img)
 cv2.waitKey()
 cv2.destroyAllWindows()
-    
-
-    
