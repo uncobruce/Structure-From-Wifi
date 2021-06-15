@@ -30,8 +30,10 @@ blue, green, red = cv2.split(img)
 
 numRows, numCols, c = img.shape # c is channel
 
-mapCoordinates = []
+img2 = np.zeros([numRows,numCols,c],dtype=np.uint8)
+img2.fill(255)
 
+mapCoordinates = []
 for i in range(1, numRows):
     for j in range(1, numCols-3):
        
@@ -85,10 +87,11 @@ for i in range(1, numRows-3):
         (np.array_equal(pixel1, white) and np.array_equal(pixel3, k4)):
             mapCoordinates.append((j, i))
             
-cv2.circle(img, (89, 500), 6, (0, 0, 0), -1)           
 for coords in mapCoordinates:
     x, y = coords[0], coords[1]
-    cv2.circle(img, (x, y), 6, (0, 0, 0), -1)
-cv2.imshow('polygon', img)
+    cv2.circle(img2, (x, y), 6, (0, 0, 0), -1)
+    
+cv2.imshow('mapResult', img2)
 cv2.waitKey()
 cv2.destroyAllWindows()
+cv2.imwrite('mapResult.jpg', img2)     
