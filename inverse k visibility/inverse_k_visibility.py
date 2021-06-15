@@ -91,7 +91,7 @@ for coords in mapCoordinates:
     x, y = coords[0], coords[1]
     cv2.circle(img2, (x, y), 6, (0, 0, 0), -1)
     
-cv2.imshow('mapResult', img2)
+cv2.imshow('mapResult', img2) # plot on white background
 cv2.waitKey()
 cv2.destroyAllWindows()
 cv2.imwrite('mapResult.jpg', img2)     
