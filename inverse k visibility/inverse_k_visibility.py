@@ -33,65 +33,69 @@ numRows, numCols, c = img.shape # c is channel
 img2 = np.zeros([numRows,numCols,c],dtype=np.uint8)
 img2.fill(255)
 
+def checkPixels(pixel1, pixel3, kval1, kval2):
+    if (np.array_equal(pixel1, kval1) and np.array_equal(pixel3, kval2)) or\
+        (np.array_equal(pixel1, kval2) and np.array_equal(pixel3, kval1)):
+            return True
+    return False
+
 mapCoordinates = []
+
 for i in range(1, numRows):
-    for j in range(1, numCols-3):
-       
+    for j in range(1, numCols-3):     
         pixel1 = img[i][j]
         pixel3 = img[i][j+3]
-        if (np.array_equal(pixel1, k0) and np.array_equal(pixel3, k1)) or\
-        (np.array_equal(pixel1, k1) and np.array_equal(pixel3, k0)):
-            mapCoordinates.append((j, i))
-
-         
-        if (np.array_equal(pixel1, k1) and np.array_equal(pixel3, k2)) or\
-        (np.array_equal(pixel1, k2) and np.array_equal(pixel3, k1)):
-            mapCoordinates.append((j, i))
-            
-        if (np.array_equal(pixel1, k2) and np.array_equal(pixel3, k3)) or\
-        (np.array_equal(pixel1, k3) and np.array_equal(pixel3, k2)):
-            mapCoordinates.append((j, i))
-            
-        if (np.array_equal(pixel1, k3) and np.array_equal(pixel3, k4)) or\
-        (np.array_equal(pixel1, k4) and np.array_equal(pixel3, k3)):
-            mapCoordinates.append((j, i))
         
-        if (np.array_equal(pixel1, k4) and np.array_equal(pixel3, white)) or\
-        (np.array_equal(pixel1, white) and np.array_equal(pixel3, k4)):
+        if checkPixels(pixel1, pixel3, k0, k1) is True:
             mapCoordinates.append((j, i))
-
+            continue
             
+        elif checkPixels(pixel1, pixel3, k1, k2) is True:
+            mapCoordinates.append((j, i))
+            continue
+            
+        elif checkPixels(pixel1, pixel3, k2, k3) is True:
+            mapCoordinates.append((j, i))
+            continue
+            
+        elif checkPixels(pixel1, pixel3, k3, k4) is True:
+            mapCoordinates.append((j, i))
+            continue
+            
+        elif checkPixels(pixel1, pixel3, k4, white) is True:
+            mapCoordinates.append((j, i))
+            continue
 for i in range(1, numRows-3):
-    for j in range(1, numCols):
-       
+    for j in range(1, numCols):     
         pixel1 = img[i][j]
         pixel3 = img[i+3][j]
-        if (np.array_equal(pixel1, k0) and np.array_equal(pixel3, k1)) or\
-        (np.array_equal(pixel1, k1) and np.array_equal(pixel3, k0)):
-            mapCoordinates.append((j, i))
-
-         
-        if (np.array_equal(pixel1, k1) and np.array_equal(pixel3, k2)) or\
-        (np.array_equal(pixel1, k2) and np.array_equal(pixel3, k1)):
-            mapCoordinates.append((j, i))
-            
-        if (np.array_equal(pixel1, k2) and np.array_equal(pixel3, k3)) or\
-        (np.array_equal(pixel1, k3) and np.array_equal(pixel3, k2)):
-            mapCoordinates.append((j, i))
-            
-        if (np.array_equal(pixel1, k3) and np.array_equal(pixel3, k4)) or\
-        (np.array_equal(pixel1, k4) and np.array_equal(pixel3, k3)):
-            mapCoordinates.append((j, i))
         
-        if (np.array_equal(pixel1, k4) and np.array_equal(pixel3, white)) or\
-        (np.array_equal(pixel1, white) and np.array_equal(pixel3, k4)):
+        if checkPixels(pixel1, pixel3, k0, k1) is True:
             mapCoordinates.append((j, i))
+            continue
+            
+        elif checkPixels(pixel1, pixel3, k1, k2) is True:
+            mapCoordinates.append((j, i))
+            continue
+            
+        elif checkPixels(pixel1, pixel3, k2, k3) is True:
+            mapCoordinates.append((j, i))
+            continue
+            
+        elif checkPixels(pixel1, pixel3, k3, k4) is True:
+            mapCoordinates.append((j, i))
+            continue
+            
+        elif checkPixels(pixel1, pixel3, k4, white) is True:
+            mapCoordinates.append((j, i))
+            continue       
+
             
 for coords in mapCoordinates:
     x, y = coords[0], coords[1]
     cv2.circle(img2, (x, y), 6, (0, 0, 0), -1)
     
-cv2.imshow('mapResult', img2) # plot on white background
+cv2.imshow('mapResult', img2)
 cv2.waitKey()
 cv2.destroyAllWindows()
 cv2.imwrite('mapResult.jpg', img2)     
