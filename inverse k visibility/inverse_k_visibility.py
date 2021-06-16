@@ -47,24 +47,20 @@ for i in range(1, numRows):
         pixel3 = img[i][j+3]
         
         if checkPixels(pixel1, pixel3, k0, k1) is True:
-            mapCoordinates.append((j, i))
-            continue
+            mapCoordinates.append((j, i))            
             
         elif checkPixels(pixel1, pixel3, k1, k2) is True:
             mapCoordinates.append((j, i))
-            continue
             
         elif checkPixels(pixel1, pixel3, k2, k3) is True:
             mapCoordinates.append((j, i))
-            continue
             
         elif checkPixels(pixel1, pixel3, k3, k4) is True:
             mapCoordinates.append((j, i))
-            continue
             
         elif checkPixels(pixel1, pixel3, k4, white) is True:
             mapCoordinates.append((j, i))
-            continue
+            
 for i in range(1, numRows-3):
     for j in range(1, numCols):     
         pixel1 = img[i][j]
@@ -72,30 +68,29 @@ for i in range(1, numRows-3):
         
         if checkPixels(pixel1, pixel3, k0, k1) is True:
             mapCoordinates.append((j, i))
-            continue
             
         elif checkPixels(pixel1, pixel3, k1, k2) is True:
             mapCoordinates.append((j, i))
-            continue
             
         elif checkPixels(pixel1, pixel3, k2, k3) is True:
             mapCoordinates.append((j, i))
-            continue
             
         elif checkPixels(pixel1, pixel3, k3, k4) is True:
             mapCoordinates.append((j, i))
-            continue
             
         elif checkPixels(pixel1, pixel3, k4, white) is True:
             mapCoordinates.append((j, i))
-            continue       
 
-            
+f = open("mapCoordinates.txt", "w") # write coordinates to text file
 for coords in mapCoordinates:
     x, y = coords[0], coords[1]
     cv2.circle(img2, (x, y), 6, (0, 0, 0), -1)
-    
+    f.write(str(coords))
+    f.write("\n")
+f.close()
+
 cv2.imshow('mapResult', img2)
 cv2.waitKey()
 cv2.destroyAllWindows()
-cv2.imwrite('mapResult.jpg', img2)     
+cv2.imwrite('mapResult.jpg', img2) # save map result
+
