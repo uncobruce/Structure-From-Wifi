@@ -39,6 +39,7 @@ def imageToGrid(image, desired_height, desired_width):
         data[mapy][mapx] = 1
     
     return data
+
 def plotGrid(data, desired_height, desired_width):  
     fig, ax = plt.subplots()
     ax.imshow(data, cmap="Greys", origin="lower", vmin=0)
@@ -47,10 +48,12 @@ def plotGrid(data, desired_height, desired_width):
     ax.grid(which="minor")
     ax.tick_params(which="minor", size=0)
     plt.show()
+    
 def initializeOccupancyGrid(desired_height, desired_width):
     data2 = np.zeros(desired_width*desired_height)
     data2 = data2.reshape((desired_width, desired_height))
     return data2
+
 def plotCoordinates(coordinates, data):
     for coords in coordinates:
         x,y=coords[0], coords[1]
@@ -85,3 +88,4 @@ data2 = initializeOccupancyGrid(desired_height, desired_width)
 data2 = plotCoordinates(randomCoords, data2)
 data2[routery][routerx] = 1 # transmitter point
 plotGrid(data2, desired_height, desired_width)
+
