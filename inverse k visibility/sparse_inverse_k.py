@@ -6,8 +6,8 @@ import warnings
 import random
 
 def imageToGrid(image, desired_height, desired_width):   
-    # Return list of grid coordinates that match image of map
-    # ------------------------------------------------------------------
+    # Return list of grid coordinates that match image of map 
+    # -----------------------------------------------------------------------
     # Get input size
     height, width = img1.shape[:2]
 
@@ -34,87 +34,54 @@ def imageToGrid(image, desired_height, desired_width):
     data = data.reshape((desired_width, desired_height))
     mapCoordinates.sort()
     mapCoordinates=np.array(mapCoordinates)
-    
     for coords in mapCoordinates:
         mapx, mapy = coords[0],coords[1]
-        data[mapx][mapy] = 1
-    data = np.transpose(data)
+        data[mapy][mapx] = 1
+    
+    return data
+def plotGrid(data, desired_height, desired_width):  
+    fig, ax = plt.subplots()
+    ax.imshow(data, cmap="Greys", origin="lower", vmin=0)
+    ax.set_xticks(np.arange(desired_height+1)-0.5, minor=True)
+    ax.set_yticks(np.arange(desired_width+1)-0.5, minor=True)
+    ax.grid(which="minor")
+    ax.tick_params(which="minor", size=0)
+    plt.show()
+def initializeOccupancyGrid(desired_height, desired_width):
+    data2 = np.zeros(desired_width*desired_height)
+    data2 = data2.reshape((desired_width, desired_height))
+    return data2
+def plotCoordinates(coordinates, data):
+    for coords in coordinates:
+        x,y=coords[0], coords[1]
+        data[y][x] = 0.75 
     return data
 
-
-desired_height = 60
-desired_width = 60
-img1 = cv2.imread("mapResult.jpg")
-data = imageToGrid(img1, desired_height, desired_width)
-
-fig, ax = plt.subplots()
-    
-
+# Coordinates of sparse k value points
 randomCoords=[(40, 56), (42, 58), (50,54), (35,55), \
               (42, 40), (45, 38), (38, 15)]
-for coords in randomCoords:
-    x,y=coords[0],coords[1]
-    data[y][x] = 0.75 
     
-routery, routerx = 47,37
-data[routery][routerx] = 1 # transmitter point
-
-ax.imshow(data, cmap="Greys", origin="lower", vmin=0)
-ax.set_xticks(np.arange(desired_height+1)-0.5, minor=True)
-ax.set_yticks(np.arange(desired_width+1)-0.5, minor=True)
-ax.grid(which="minor")
-ax.tick_params(which="minor", size=0)
-plt.show()
-
-
-
+# k values corresponding to every coordinate
 kVals = [1,1,1, \
          0, 0, 0]
-# TODO: gridmap of k visible areas
-data2 = np.zeros(desired_width*desired_height)
-data2 = data2.reshape((desired_width, desired_height))
+    
+# Desired grid map dimensions   
+desired_height = 60
+desired_width = 60
 
-for coords in randomCoords:
-    x,y=coords[0],coords[1]
-    data2[x][y] = 0.75 
-data2[routerx][routery] = 1 # transmitter point
+# Image of map to be recreated
+img1 = cv2.imread("mapResult.jpg")
 
-data2 = np.transpose(data2)
+# Plot map and k value points for comparison
+data = imageToGrid(img1, desired_height, desired_width)
+routery, routerx = 47,37
+data[routery][routerx] = 1 # transmitter point
+data = plotCoordinates(randomCoords, data)
+plotGrid(data, desired_height, desired_width)
 
 
-# rowSums=[]
-# for i in range(1, len(data2[0])-1, 3):
-#     prevRow = data2[i-1]
-#     currentRow=data2[i]
-#     nextRow=data2[i+1]
-#     # print(prevRow)
-#     # print(currentRow)
-#     # print(nextRow)
-#     colSum = 0
-#     for j in range(len(prevRow)):
-#         if prevRow[j] != 0. :
-#             col1 = prevRow[j]
-#             col2 = currentRow[j]
-#             col3 = nextRow[j]
-#             colSum = col1 + col2 + col3
-#             break
-#     s1, s2, s3 =sum(prevRow), sum(currentRow), sum(nextRow)
-#     rowsum = s1 + s2 + s3
-#     rowSums.append(rowsum)
-#     print(i-1, i, i+1, 'rowsum',rowsum, 'colsum',colSum)
-
-# rowSums = rowSums[::-1] # reverse order so it's top to bottom
-
-fig2, ax2 = plt.subplots()
-ax2.imshow(data2, cmap="Greys", origin="lower", vmin=0)
-ax2.set_xticks(np.arange(desired_height+1)-0.5, minor=True)
-ax2.set_yticks(np.arange(desired_width+1)-0.5, minor=True)
-ax2.grid(which="minor")
-ax2.tick_params(which="minor", size=0)
-plt.show()
-
-# sum up row-wise for every 3 rows
-# if sum > sum of first col
-# horizontal spread is true
-# if there are k values below horiz values: wall is below
-# draw walls at every points identified, x = each points x, y = min val y
+# Create and plot occupancy grid
+data2 = initializeOccupancyGrid(desired_height, desired_width)
+data2 = plotCoordinates(randomCoords, data2)
+data2[routery][routerx] = 1 # transmitter point
+plotGrid(data2, desired_height, desired_width)
