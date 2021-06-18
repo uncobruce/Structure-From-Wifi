@@ -154,10 +154,10 @@ def getNearestYCoordinate(data, point, row, col, kValue, kValueCoords, kVals, ro
         return routery
     return nearest_kVal_y
     
-# If there are more issues, recheck checkRow or checkCol   
-
+# If there are issues, recheck checkRow or checkCol   
+isolatedPoints = [] # list for points that don't see any (k-1) points\
+wallCoords = []
 for p in k1vals:
-    isolatedPoints = [] # list for points that don't see any (k-1) points\
     # on same row or column
     row, col = p[1], p[0]
     # print(p)
@@ -171,8 +171,19 @@ for p in k1vals:
         distance = (nearestY - row)//2
         wally, wallx = row + distance, col
         data2[wally][wallx] = 1
-    else:
+        wallCoords.append((wallx,wally))
+        for point in isolatedPoints:
+            x, y = point[0], point[1]
+            data2[wally][x] = 1
+            wallCoords.append((x,wally))
+        isolatedPoints=[]
+    elif checkcol is False:
         isolatedPoints.append(p)
-
+    if p == k1vals[-1]:
+        for point in isolatedPoints:
+            x, y = point[0], point[1]
+            data2[wally][x] = 1
+            wallCoords.append((x,wally))
+        isolatedPoints=[]
 
 plotGrid(data2, desired_height, desired_width)
