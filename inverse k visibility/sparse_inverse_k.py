@@ -1,9 +1,6 @@
-import math
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
-import warnings
-import random
 
 def imageToGrid(image, desired_height, desired_width):   
     # Return list of grid coordinates that match image of map 
@@ -140,6 +137,7 @@ data2[routery][routerx] = 1 # transmitter point
 k1vals = getkValCoordinates(kValueCoords, kVals, 1)
 k0vals = getkValCoordinates(kValueCoords, kVals, 0)
 
+# plotGrid(data2, desired_height, desired_width)
 
 def getNearestYDistance(data, point, kPrevCoords, routery):
     # Compare nearest k-1 value by y-coordinate to router y coord
@@ -173,9 +171,9 @@ def getNearestXDistance(data, point, kPrevCoords, routerx):
     if abs(kDiff) < abs(routerDiff):
         return kDiff
     return routerDiff
+
             
 # If there are issues, recheck checkRow or checkCol   
-a = getNearestXDistance(data2, (55,38), k0vals, routerx)
 
 # Build horizontal parts of k1
 wallCoords = []
@@ -187,6 +185,7 @@ for p in k1vals:
         wally, wallx = (row + nearestYDistance//2), col
         data2[wally][wallx] = 1
         wallCoords.append((wallx,wally))
+   
         
 # Build vertical parts of k1
 for p in k1vals:
@@ -197,6 +196,46 @@ for p in k1vals:
         wally, wallx = row, col + nearestXDistance//2
         data2[wally][wallx] = 1
         wallCoords.append((wallx,wally))
+newk1vals = []
+for p in k1vals:
+    row, col = p[1], p[0]
+    prevRow = row-1
+    nextRow = row+1
+    if 0.75 in data2[row]:
+        x_indices = np.where(data2[row]==0.75)
+        for x_index in x_indices[0]:
+            if x_index == col:
+                continue
+            for i in range(x_index - col+1):
+                data2[row][col+i] = 0.75
+                newk1vals.append((col+i,row))
+                
+    if 0.75 in data2[prevRow]:
+        x_indices = np.where(data2[prevRow]==0.75)
+        for x_index in x_indices[0]:
+            for i in range(x_index - col+1):
+                data2[row][col+i] = 0.75
+                newk1vals.append((col+i,row))
+        
+    if 0.75 in data2[nextRow]:
+       x_indices = np.where(data2[nextRow]==0.75)
+       for x_index in x_indices[0]:
+           for i in range(x_index - col+1):
+               data2[row][col+i] = 0.75 
+               newk1vals.append((col+i,row))
+    prevCol = col-1
+    nextCol = col+1
+    
+    
+   
 
-isolatedPoints = [] # for points that don't see any (k-1) points
+k1vals = k1vals + newk1vals
+newk1vals=[]
+
+
 plotGrid(data2, desired_height, desired_width)
+# Check points found on rows before or after or cols before or after
+# If same k value, then paint the row between them as also having same k value
+# If point is isolated, assume immediate cells have same k value
+# Now with new k1 values, if this list contains a column/row with wall already painted,
+# assume all cells are along the same wall        
