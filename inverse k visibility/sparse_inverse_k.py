@@ -137,7 +137,7 @@ data2[routery][routerx] = 1 # transmitter point
 k1vals = getkValCoordinates(kValueCoords, kVals, 1)
 k0vals = getkValCoordinates(kValueCoords, kVals, 0)
 
-# plotGrid(data2, desired_height, desired_width)
+plotGrid(data2, desired_height, desired_width)
 
 def getNearestYDistance(data, point, kPrevCoords, routery):
     # Compare nearest k-1 value by y-coordinate to router y coord
@@ -152,7 +152,7 @@ def getNearestYDistance(data, point, kPrevCoords, routery):
             lowest_kDiff = kDiff
         if kDiff < lowest_kDiff:
             lowest_kDiff = kDiff
-        #print(lowest_kDiff, routerDiff)
+        # print(lowest_kDiff, routerDiff)
     if abs(lowest_kDiff) < abs(routerDiff):
         return lowest_kDiff
     return routerDiff
@@ -176,7 +176,6 @@ def getNearestXDistance(data, point, kPrevCoords, routerx):
 # If there are issues, recheck checkRow or checkCol   
 
 # Build horizontal parts of k1
-wallCoords = []
 for p in k1vals:
     row, col = p[1], p[0]
     checkcol = checkColumn(data2, row, col, 1, kValueCoords, kVals, routerx)
@@ -184,7 +183,6 @@ for p in k1vals:
         nearestYDistance = getNearestYDistance(data2, p, k0vals, routery)
         wally, wallx = (row + nearestYDistance//2), col
         data2[wally][wallx] = 1
-        wallCoords.append((wallx,wally))
    
         
 # Build vertical parts of k1
@@ -192,48 +190,105 @@ for p in k1vals:
     row, col = p[1], p[0]
     checkrow = checkRow(data2, row, col, 1, kValueCoords, kVals, routery)
     if checkrow is True:
-        nearestXDistance = getNearestXDistance(data2, p, k0vals, routery)
+        nearestXDistance = getNearestXDistance(data2, p, k0vals, routerx)
         wally, wallx = row, col + nearestXDistance//2
         data2[wally][wallx] = 1
-        wallCoords.append((wallx,wally))
+plotGrid(data2, desired_height, desired_width)
+
 newk1vals = []
 for p in k1vals:
     row, col = p[1], p[0]
     prevRow = row-1
     nextRow = row+1
+    kval_desired = 1
     if 0.75 in data2[row]:
         x_indices = np.where(data2[row]==0.75)
         for x_index in x_indices[0]:
             if x_index == col:
                 continue
-            for i in range(x_index - col+1):
-                data2[row][col+i] = 0.75
-                newk1vals.append((col+i,row))
+            kval = getKValue((x_index,row), kValueCoords, kVals)
+            if kval == kval_desired:
+                for i in range(x_index - col+1):
+                    data2[row][col+i] = 0.75
+                    newk1vals.append((col+i,row))
                 
     if 0.75 in data2[prevRow]:
         x_indices = np.where(data2[prevRow]==0.75)
         for x_index in x_indices[0]:
-            for i in range(x_index - col+1):
-                data2[row][col+i] = 0.75
-                newk1vals.append((col+i,row))
+            kval = getKValue((x_index,prevRow), kValueCoords, kVals)
+            if kval == kval_desired:
+                for i in range(x_index - col+1):
+                    data2[row][col+i] = 0.75
+                    newk1vals.append((col+i,row))
         
     if 0.75 in data2[nextRow]:
        x_indices = np.where(data2[nextRow]==0.75)
        for x_index in x_indices[0]:
-           for i in range(x_index - col+1):
-               data2[row][col+i] = 0.75 
-               newk1vals.append((col+i,row))
-    prevCol = col-1
-    nextCol = col+1
-    
-    
-   
+           kval = getKValue((x_index, nextRow), kValueCoords, kVals)
+           if kval == kval_desired:
+               for i in range(x_index - col+1):
+                   data2[row][col+i] = 0.75 
+                   newk1vals.append((col+i,row))
+newk0vals = []    
+for p in k0vals:
+    row, col = p[1], p[0]
+    prevRow = row-1
+    nextRow = row+1
+    kval_desired = 0
+    if 0.75 in data2[row]:
+        x_indices = np.where(data2[row]==0.75)
+        for x_index in x_indices[0]:
+            if x_index == col:
+                continue
+            kval = getKValue((x_index,row), kValueCoords, kVals)
+            if kval == kval_desired:
+                for i in range(x_index - col+1):
+                    data2[row][col+i] = 0.75
+                    newk0vals.append((col+i,row))
+                
+    if 0.75 in data2[prevRow]:
+        x_indices = np.where(data2[prevRow]==0.75)
+        for x_index in x_indices[0]:
+            kval = getKValue((x_index,prevRow), kValueCoords, kVals)
+            if kval == kval_desired:
+                for i in range(x_index - col+1):
+                    data2[row][col+i] = 0.75
+                    newk0vals.append((col+i,row))
+        
+    if 0.75 in data2[nextRow]:
+       x_indices = np.where(data2[nextRow]==0.75)
+       for x_index in x_indices[0]:
+           kval = getKValue((x_index, nextRow), kValueCoords, kVals)
+           if kval == kval_desired:
+               for i in range(x_index - col+1):
+                   data2[row][col+i] = 0.75 
+                   newk0vals.append((col+i,row))
 
 k1vals = k1vals + newk1vals
 newk1vals=[]
 
 
 plotGrid(data2, desired_height, desired_width)
+
+# for p in k1vals:
+#     row, col = p[1], p[0]
+#     checkcol = checkColumn(data2, row, col, 1, kValueCoords, kVals, routerx)
+#     if checkcol is True:
+#         nearestYDistance = getNearestYDistance(data2, p, k0vals, routery)
+#         wally, wallx = (row + nearestYDistance//2), col
+#         data2[wally][wallx] = 1
+   
+        
+# # Build vertical parts of k1
+# for p in k1vals:
+#     row, col = p[1], p[0]
+#     checkrow = checkRow(data2, row, col, 1, kValueCoords, kVals, routery)
+#     if checkrow is True:
+#         nearestXDistance = getNearestXDistance(data2, p, k0vals, routery)
+#         wally, wallx = row, col + nearestXDistance//2
+#         data2[wally][wallx] = 1
+# plotGrid(data2, desired_height, desired_width)
+
 # Check points found on rows before or after or cols before or after
 # If same k value, then paint the row between them as also having same k value
 # If point is isolated, assume immediate cells have same k value
