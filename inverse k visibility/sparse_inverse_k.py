@@ -29,6 +29,7 @@ def imageToGrid(image, desired_height, desired_width):
     # Initialize grid array for rebuilding map into grid form
     data = np.zeros(desired_width*desired_height)
     data = data.reshape((desired_width, desired_height))
+    data[data == 0] = 0.5
     mapCoordinates.sort()
     mapCoordinates=np.array(mapCoordinates)
     for coords in mapCoordinates:
@@ -49,12 +50,13 @@ def plotGrid(data, desired_height, desired_width):
 def initializeOccupancyGrid(desired_height, desired_width):
     data2 = np.zeros(desired_width*desired_height)
     data2 = data2.reshape((desired_width, desired_height))
+    data2[data2 == 0 ] = 0.5
     return data2
 
 def plotKCoordinates(coordinates, data):
     for coords in coordinates:
         x,y=coords[0], coords[1]
-        data[y][x] = 0.75 
+        data[y][x] = 0
     return data
 
 def getkValCoordinates(coordinates, kVals, desiredKValue):
@@ -124,14 +126,14 @@ img1 = cv2.imread("mapResult.jpg")
 # Plot map and k value points for comparison
 data = imageToGrid(img1, desired_height, desired_width)
 routery, routerx = 47,37
-data[routery][routerx] = 1 # transmitter point
+data[routery][routerx] = 0 # transmitter point
 data = plotKCoordinates(kValueCoords, data)
 plotGrid(data, desired_height, desired_width)
 
 # Create and plot occupancy grid
 data2 = initializeOccupancyGrid(desired_height, desired_width)
 data2 = plotKCoordinates(kValueCoords, data2)
-data2[routery][routerx] = 1 # transmitter point
+data2[routery][routerx] = 0.75 # transmitter point
 
 # Separate k value coords into different lists
 k1vals = getkValCoordinates(kValueCoords, kVals, 1)
@@ -172,6 +174,7 @@ def getNearestXDistance(data, point, kPrevCoords, routerx):
         return kDiff
     return routerDiff
 
+
             
 # If there are issues, recheck checkRow or checkCol   
 
@@ -193,7 +196,7 @@ for p in k1vals:
         nearestXDistance = getNearestXDistance(data2, p, k0vals, routerx)
         wally, wallx = row, col + nearestXDistance//2
         data2[wally][wallx] = 1
-plotGrid(data2, desired_height, desired_width)
+
 
 newk1vals = []
 for p in k1vals:
@@ -268,7 +271,6 @@ k1vals = k1vals + newk1vals
 newk1vals=[]
 
 
-plotGrid(data2, desired_height, desired_width)
 
 # for p in k1vals:
 #     row, col = p[1], p[0]
