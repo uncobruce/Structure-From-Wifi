@@ -207,10 +207,10 @@ for k0 in k0vals:
                         continue
                     point3 = np.array(k02)
                     distanceTokPrev = int(np.linalg.norm(point3-point1))
-                    if distanceTokPrev <= distanceToKValue:
+                    if distanceTokPrev == distanceToKValue:
                         same_kval_factor = 1 / distanceTokPrev
                         data2[i][j] = current_cell_value*(1-same_kval_factor)
-                        break
+                        
                 continue # don't change cell value if outside max distance    
             elif distanceToKValue > max_kval_visble_distance+2:
                 continue # don't change cell value if outside max distance
@@ -241,9 +241,11 @@ for k1 in k1vals:
                 for k0 in k0vals:
                     point3 = np.array(k0)
                     distanceTokPrev = int(np.linalg.norm(point3-point1))
-                    if distanceTokPrev <= distanceToKValue:
-                        same_kval_factor = 1 / distanceTokPrev
-                        data2[i][j] = current_cell_value*(1+1/distanceTokPrev)  
+                    if distanceTokPrev == distanceToKValue:
+                        if point3[1] > point2[1] and point1[1] > point2[1]:
+                            
+                            same_kval_factor = 1 / distanceTokPrev
+                            data2[i][j] = round(current_cell_value*(1+1/distanceTokPrev))  
                 continue # don't change cell value if outside max distance
             elif distanceToKValue > max_kval_visble_distance + 2:     
                 continue # don't change cell value if outside max distance
@@ -255,7 +257,38 @@ for k1 in k1vals:
                 newk1vals.append((x,y))
                 
                 
-          
+# for i in range(len(data2)):
+#     for j in range(len(data2[0])):
+#         print(data2[i][j])
+                
+ 
+# P_wall_in_between = current_cell_value*(1+1/distanceToNextKValue)               
+# k1vals = k1vals + newk1vals      
+# k0vals = k0vals + newk0vals   
+
+# Cells shared by k and k-1 vals are walls
+# for k1 in k1vals:
+#     for k0 in k0vals:
+#         y2, x2 = k1[1], k1[0]
+#         y1, x1 = k0[1], k0[0]
+#         point1 = np.array((x1,y1))
+#         point2 = np.array((x2,y2))
+#         distanceBetweenKValues = int(np.linalg.norm(point2-point1))
+#         minX,maxX = min(x1,x2), max(x1,x2)
+#         minY, maxY = min(y1,y2), max(y1,y2)
+#         if k0 == k0vals[0] and k1 == k1vals[1]:
+#             print(point1, point2)
+#             print(distanceBetweenKValues)
+#             print(minX, maxX)
+#             print(minY, maxY)
+#         for i in range(minX+1, maxX+1):
+#             for j in range(minY+1, maxY):
+#                 current_cell_value=data2[i][j]
+#                 P_wall_in_between = current_cell_value*(1+1/distanceBetweenKValues)
+#                 data2[i][j] = P_wall_in_between
+#                 if k0 == k0vals[0] and k1 == k1vals[1]:
+#                     print(current_cell_value, i, j)
+#                     print('p:',P_wall_in_between)
 
 plotGrid(data2, desired_height, desired_width)
 
