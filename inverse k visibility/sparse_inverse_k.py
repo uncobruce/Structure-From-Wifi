@@ -72,13 +72,28 @@ def getkValCoordinates(coordinates, kVals, desiredKValue):
     kValCoordinates.sort()
     return kValCoordinates
 
-def getKValue(point, kvalCoords, kVals):
-    # Given a point, return its k value
-    for i in range(len(kvalCoords)):
-        if kvalCoords[i] == point:
-            return kVals[i]
-        
-
+# Create a dictionary of every coordinate and its k value
+def getKValueDictionary(kValueCoords, kVals):
+    zip_iterator = zip(kValueCoords, kVals)
+    dictionary1 = dict(zip_iterator)    
+    other_coords =[]
+    other_kvals = []
+    for i in range(len(data2)):
+        for j in range(len(data2)):
+            coordinate = (j,i)      
+            if coordinate not in kValueCoords:
+                kval = None
+                other_coords.append(coordinate)
+                other_kvals.append(kval)
+    zip_iterator2 = zip(other_coords, other_kvals)
+    dictionary2 = dict(zip_iterator2)
+    def Merge(dict1, dict2):
+        return(dict2.update(dict1))
+    Merge(dictionary1,dictionary2)
+    k_val_dictionary = dictionary2
+    kval_items = k_val_dictionary.items()
+    k_val_dictionary = dict(sorted(kval_items))
+    return  k_val_dictionary
 
 # Coordinates of sparse k value points
 kValueCoords=[(40, 56), (42, 58), (50,54), (35,55), \
@@ -118,8 +133,9 @@ k0vals.append((routerx, routery))
 
 # Sort k0 vals to be able to draw outline 
 k0vals = sorted(k0vals, key=lambda k: (k[1], k[0])) #sort k0 vals by y coordinate
-polypoints = []
+
 # Fill k0 polygon 
+polypoints = []
 poly = Polygon(k0vals)
 for i in range(len(data2)):
     for j in range(len(data2)):
@@ -139,13 +155,14 @@ for k01 in k0vals:
         point1 = k0vals[i+1]
     i+=1
     x0,y0 = point0[0], point0[1]
-    
     x1,y1 = point1[0], point1[1]
     k0_line = list(bresenham(x0, y0, x1, y1))
     for pt in k0_line:
         ptx,pty = pt[0],pt[1]
         data2[pty][ptx] = 0
-        linepoints.append(pt)        
+        linepoints.append(pt)     
+        
+# Add new k0 values to full k values list w/ corresp. k val       
 new_k0vals = linepoints + polypoints
 for k0 in new_k0vals:
     if k0 not in k0vals:
@@ -153,47 +170,23 @@ for k0 in new_k0vals:
         kVals.append(0)
 k0vals = new_k0vals
 
-# Create a dictionary of every coordinate and its k value
-def getKValueDictionary(kValueCoords, kVals):
-    zip_iterator = zip(kValueCoords, kVals)
-    dictionary1 = dict(zip_iterator)    
-    other_coords =[]
-    other_kvals = []
-    for i in range(len(data2)):
-        for j in range(len(data2)):
-            coordinate = (j,i)
-            
-            
-            if coordinate not in kValueCoords:
-                
-                kval = None
-                other_coords.append(coordinate)
-                other_kvals.append(kval)
-    zip_iterator2 = zip(other_coords, other_kvals)
-    dictionary2 = dict(zip_iterator2)
-    def Merge(dict1, dict2):
-        return(dict2.update(dict1))
-    Merge(dictionary1,dictionary2)
-    k_val_dictionary = dictionary2
-    kval_items = k_val_dictionary.items()
-    k_val_dictionary = dict(sorted(kval_items))
-    return  k_val_dictionary
-    
-
+# Obtain dictionary containing every grid cell's k value
+k_val_dictionary = getKValueDictionary(kValueCoords, kVals)
 # plotGrid(data2, desired_height, desired_width)
 
-k_val_dictionary = getKValueDictionary(kValueCoords, kVals)
- # Identify every cell's proximity to k0 values
+wallpts = []
+# Identify every cell's proximity to each k0 value
 for k0 in k0vals:
     for i in range(len(data2)): # i is grid row
         for j in range(len(data2[0])): # j is grid col in that row
             y, x = i, j
             current_cell_value = data2[y][x]
-            
-
             point1 = np.array((x, y))
             point2 = np.array(k0)
             distanceToKValue = int(np.linalg.norm(point2-point1))
+            if distanceToKValue !=0: same_kval_factor = 1 / distanceToKValue
+            P_same_kval = current_cell_value * (1 - same_kval_factor)
+            P_occ = 1 - P_same_kval
             if data2[y][x] == 0:
                 if ((x,y) in k0vals):
                     cellID = 1
@@ -208,16 +201,17 @@ for k0 in k0vals:
                 continue
             else:
                 cellID = k_val_dictionary[(x,y)] 
-
-                same_kval_factor = 1 / distanceToKValue
                 if cellID == 1:
-                    data2[y][x] = 1
-                    continue
+                    data2[y][x] = P_occ
+                    cellID = -1 # -1 represents a wall cell
+                    k_val_dictionary[(x,y)] = cellID
+                    wallpts.append((x,y))
                 else:
                     P_same_kval = current_cell_value * (1 - same_kval_factor)
                     data2[y][x] = P_same_kval 
                     cellID = 0
-                    k_val_dictionary[(x,y)] = cellID  
+                    k_val_dictionary[(x,y)] = cellID
+                    
 # Identify every cell's proximity to k1 values
 for k1 in k1vals:
     for i in range(len(data2)): # i is grid row
@@ -227,12 +221,43 @@ for k1 in k1vals:
             point1 = np.array((x, y))
             point2 = np.array(k1)
             distanceToKValue = int(np.linalg.norm(point2-point1))
+            if distanceToKValue !=0: same_kval_factor = 1 / distanceToKValue
+            P_same_kval = current_cell_value * (1 - same_kval_factor)
+            P_occ = 1 - P_same_kval
             if data2[y][x] == 0:
                 if ((x,y) in k1vals):
                     cellID = 1
                     k_val_dictionary[(x,y)] = cellID
                 continue
             if distanceToKValue > max_kval_visble_distance:
+                if y < len(data2)-1 and y > 0:
+                    up = k_val_dictionary[(x,y+1)]
+                    down = k_val_dictionary[(x,y-1)]
+                    if up == 1 and down == 0:
+                        data2[y][x] = P_occ
+                        cellID = -1
+                        k_val_dictionary[(x,y)] = cellID
+                        wallpts.append((x,y))
+                        
+                    elif up == 0 and down == 1:
+                        data2[y][x] = P_occ
+                        cellID = -1
+                        k_val_dictionary[(x,y)] = cellID
+                        wallpts.append((x,y))
+                        
+                if x < len(data2)-1 and x > 0:
+                    left = k_val_dictionary[(x+1,y)]
+                    right = k_val_dictionary[(x-1,1)]
+                    if left == 1 and right == 0:
+                        data2[y][x] = P_occ
+                        cellID = -1
+                        k_val_dictionary[(x,y)] = cellID
+                        wallpts.append((x,y))
+                    elif left == 0 and right == 1:
+                        data2[y][x] = P_occ
+                        cellID = -1
+                        k_val_dictionary[(x,y)] = cellID
+                        wallpts.append((x,y))
                 continue
             if distanceToKValue == 0:
                 data2[y][x] = 0
@@ -241,15 +266,16 @@ for k1 in k1vals:
                 continue
             else:
                 cellID = k_val_dictionary[(x,y)] 
-                same_kval_factor = 1 / distanceToKValue
                 if cellID == 0:
-                    data2[y][x] = 1
+                    data2[y][x] = P_occ
+                    cellID = -1
+                    k_val_dictionary[(x,y)] = cellID
+                    wallpts.append((x,y))
                     continue
                 if cellID == 1:
-                    data2[y][x] = current_cell_value * (1-(same_kval_factor*same_kval_factor))
+                    data2[y][x] = P_same_kval
                     continue
                 else:
-                    P_same_kval = current_cell_value * (1 - same_kval_factor)
                     data2[y][x] = P_same_kval
                     cellID = 1
                     k_val_dictionary[(x,y)] = cellID
