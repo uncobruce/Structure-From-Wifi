@@ -1,8 +1,11 @@
 import matplotlib.pyplot as plt
+from shapely.geometry import Point, Polygon
 import numpy as np
 import cv2
-max_kval_visble_distance = 2
+from bresenham import bresenham
 
+max_k0_visble_distance = 3
+max_kval_visble_distance = 3
 def imageToGrid(image, desired_height, desired_width):   
     # Return list of grid coordinates that match image of map 
     # -----------------------------------------------------------------------
@@ -75,69 +78,8 @@ def getKValue(point, kvalCoords, kVals):
         if kvalCoords[i] == point:
             return kVals[i]
         
-def checkRow(data, row, col, kValue, kValueCoords, kVals, routery):
-    # Return True if k-1 points on same row found
-    x = col
-    y = row
-    if y == routery:
-        return True
-    for i in range(len(data[0])):
-        if i == x:
-            continue
-        if data[y][i] != 0: # changing x values
-            kval = getKValue((i,y), kValueCoords, kVals)
-            if kval == kValue - 1:
-                return True
-    return False
-
-def checkColumn(data, row, col, kValue, kValueCoords, kVals, routerx):
-    # Return True if k-1 points on same col found
-    x = col
-    y = row
-    if x == routerx:
-        return True
-    for i in range(len(data[0])):
-        if i == y:
-            continue
-        if data[i][x] != 0: # changing y values
-            kval = getKValue((x, i), kValueCoords, kVals)
-            if kval == kValue - 1:
-                return True
-    return False
 
 
-def getNearestYDistance(data, point, kPrevCoords, routery):
-    # Compare nearest k-1 value by y-coordinate to router y coord
-    # Return y value of whichever is closer to given point
-    y = point[1]
-    routerDiff = routery - y
-    lowest_kDiff = None
-    for k in kPrevCoords:
-        ky = k[1]
-        kDiff = ky - y
-        if lowest_kDiff is None:
-            lowest_kDiff = kDiff
-        if kDiff < lowest_kDiff:
-            lowest_kDiff = kDiff
-        # print(lowest_kDiff, routerDiff)
-    if abs(lowest_kDiff) < abs(routerDiff):
-        return lowest_kDiff
-    return routerDiff
-
-def getNearestXDistance(data, point, kPrevCoords, routerx):
-    x = point[0]
-    routerDiff = routerx - x
-    lowest_kDiff = None
-    for k in kPrevCoords:
-        kx = k[0]
-        kDiff = kx - x
-        if lowest_kDiff is None:
-            lowest_kDiff = kDiff
-        if kDiff < lowest_kDiff:
-            lowest_kDiff = kDiff
-    if abs(kDiff) < abs(routerDiff):
-        return kDiff
-    return routerDiff
 # Coordinates of sparse k value points
 kValueCoords=[(40, 56), (42, 58), (50,54), (35,55), \
               (42, 7),(37, 7),(57, 40), (55, 38), (55, 18), (56, 45),\
@@ -159,136 +101,160 @@ img1 = cv2.imread("mapResult.jpg")
 # Plot map and k value points for comparison
 data = imageToGrid(img1, desired_height, desired_width)
 routery, routerx = 47,37
-data[routery][routerx] = 0.75 # transmitter point
+data[routery][routerx] = 0 # transmitter point
 data = plotKCoordinates(kValueCoords, data)
-plotGrid(data, desired_height, desired_width)
-
-
 
 # Create and plot occupancy grid
 data2 = initializeOccupancyGrid(desired_height, desired_width)
 data2[routery][routerx] = 0 # transmitter point
 data2 = plotKCoordinates(kValueCoords, data2)
 
-
+            
 # Separate k value coords into different lists
 k1vals = getkValCoordinates(kValueCoords, kVals, 1)
 k0vals = getkValCoordinates(kValueCoords, kVals, 0)
 kValueCoords.append((routerx,routery))
+k0vals.append((routerx, routery))
 
-k0vals.append((routerx,routery))
-newk0vals=[]
+# Sort k0 vals to be able to draw outline 
+k0vals = sorted(k0vals, key=lambda k: (k[1], k[0])) #sort k0 vals by y coordinate
+polypoints = []
+# Fill k0 polygon 
+poly = Polygon(k0vals)
+for i in range(len(data2)):
+    for j in range(len(data2)):
+        point = Point(i,j)
+        if point.within(poly):
+            data2[j][i] = 0
+            polypoints.append((i,j))
+        
+# Draw outline of k0 polygon
+i=0
+linepoints=[]
+for k01 in k0vals:
+    point0 = k01
+    if i == len(k0vals)-1:
+        point1 = k0vals[0]
+    else:
+        point1 = k0vals[i+1]
+    i+=1
+    x0,y0 = point0[0], point0[1]
+    
+    x1,y1 = point1[0], point1[1]
+    k0_line = list(bresenham(x0, y0, x1, y1))
+    for pt in k0_line:
+        ptx,pty = pt[0],pt[1]
+        data2[pty][ptx] = 0
+        linepoints.append(pt)        
+new_k0vals = linepoints + polypoints
+for k0 in new_k0vals:
+    if k0 not in k0vals:
+        kValueCoords.append(k0)
+        kVals.append(0)
+k0vals = new_k0vals
+
+# Create a dictionary of every coordinate and its k value
+def getKValueDictionary(kValueCoords, kVals):
+    zip_iterator = zip(kValueCoords, kVals)
+    dictionary1 = dict(zip_iterator)    
+    other_coords =[]
+    other_kvals = []
+    for i in range(len(data2)):
+        for j in range(len(data2)):
+            coordinate = (j,i)
+            
+            
+            if coordinate not in kValueCoords:
+                
+                kval = None
+                other_coords.append(coordinate)
+                other_kvals.append(kval)
+    zip_iterator2 = zip(other_coords, other_kvals)
+    dictionary2 = dict(zip_iterator2)
+    def Merge(dict1, dict2):
+        return(dict2.update(dict1))
+    Merge(dictionary1,dictionary2)
+    k_val_dictionary = dictionary2
+    kval_items = k_val_dictionary.items()
+    k_val_dictionary = dict(sorted(kval_items))
+    return  k_val_dictionary
+    
+
+# plotGrid(data2, desired_height, desired_width)
+
+k_val_dictionary = getKValueDictionary(kValueCoords, kVals)
+ # Identify every cell's proximity to k0 values
 for k0 in k0vals:
     for i in range(len(data2)): # i is grid row
         for j in range(len(data2[0])): # j is grid col in that row
-            current_cell_value = data2[i][j]
             y, x = i, j
+            current_cell_value = data2[y][x]
+            
+
             point1 = np.array((x, y))
             point2 = np.array(k0)
             distanceToKValue = int(np.linalg.norm(point2-point1))
-            if (x,y) in kValueCoords or (x,y) in newk0vals:
+            if data2[y][x] == 0:
+                if ((x,y) in k0vals):
+                    cellID = 1
+                    k_val_dictionary[(x,y)] = cellID
                 continue
-            
-            if distanceToKValue == 0:
-                data2[i][j] = 0
-                newk0vals.append((x,y))
-            if distanceToKValue > max_kval_visble_distance and\
-                distanceToKValue < max_kval_visble_distance + 2:     
-                for k1 in k1vals:
-                    point3 = np.array(k1)
-                    distanceTokPrev = int(np.linalg.norm(point3-point1))
-                    if distanceTokPrev <= distanceToKValue:
-                        same_kval_factor = 1 / distanceTokPrev
-                        data2[i][j] = current_cell_value*(1+same_kval_factor)
-                        break
-    
-                for k02 in k0vals:
-                    if k02 == k0:
-                        continue
-                    point3 = np.array(k02)
-                    distanceTokPrev = int(np.linalg.norm(point3-point1))
-                    if distanceTokPrev == distanceToKValue:
-                        same_kval_factor = 1 / distanceTokPrev
-                        data2[i][j] = current_cell_value*(1-same_kval_factor)
-                        
-                continue # don't change cell value if outside max distance    
-            elif distanceToKValue > max_kval_visble_distance+2:
-                continue # don't change cell value if outside max distance
+            if distanceToKValue > max_k0_visble_distance:
+                continue
+            if distanceToKValue == 0:    
+                data2[y][x] = 0
+                cellID = 0
+                k_val_dictionary[(x,y)] = cellID
+                continue
             else:
+                cellID = k_val_dictionary[(x,y)] 
+
                 same_kval_factor = 1 / distanceToKValue
-                P_same_kval = current_cell_value * (1 - same_kval_factor)
-                data2[i][j] = P_same_kval
-                newk0vals.append((x,y))
-k0vals = newk0vals + k0vals
-newk1vals=[]
-# All cells with a k value are free space
+                if cellID == 1:
+                    data2[y][x] = 1
+                    continue
+                else:
+                    P_same_kval = current_cell_value * (1 - same_kval_factor)
+                    data2[y][x] = P_same_kval 
+                    cellID = 0
+                    k_val_dictionary[(x,y)] = cellID  
+# Identify every cell's proximity to k1 values
 for k1 in k1vals:
     for i in range(len(data2)): # i is grid row
-        for j in range(len(data2[0])): # j is grid col in that row
-            current_cell_value = data2[i][j]
+        for j in range(len(data2)): # j is grid col in that row
             y, x = i, j
+            current_cell_value = data2[y][x]
             point1 = np.array((x, y))
             point2 = np.array(k1)
             distanceToKValue = int(np.linalg.norm(point2-point1))
-            if (x,y) in kValueCoords or (x,y) in newk1vals or (x,y) in newk0vals:
+            if data2[y][x] == 0:
+                if ((x,y) in k1vals):
+                    cellID = 1
+                    k_val_dictionary[(x,y)] = cellID
+                continue
+            if distanceToKValue > max_kval_visble_distance:
                 continue
             if distanceToKValue == 0:
-                data2[i][j] = 0
-                newk1vals.append((x,y))
+                data2[y][x] = 0
+                cellID = 1
+                k_val_dictionary[(x,y)] = cellID
                 continue
-            if distanceToKValue > max_kval_visble_distance and\
-                distanceToKValue < max_kval_visble_distance + 2:     
-                for k0 in k0vals:
-                    point3 = np.array(k0)
-                    distanceTokPrev = int(np.linalg.norm(point3-point1))
-                    if distanceTokPrev == distanceToKValue:
-                        if point3[1] > point2[1] and point1[1] > point2[1]:
-                            
-                            same_kval_factor = 1 / distanceTokPrev
-                            data2[i][j] = round(current_cell_value*(1+1/distanceTokPrev))  
-                continue # don't change cell value if outside max distance
-            elif distanceToKValue > max_kval_visble_distance + 2:     
-                continue # don't change cell value if outside max distance
-            
             else:
+                cellID = k_val_dictionary[(x,y)] 
                 same_kval_factor = 1 / distanceToKValue
-                P_same_kval = current_cell_value * (1 - same_kval_factor)
-                data2[i][j] = P_same_kval
-                newk1vals.append((x,y))
-                
-                
-# for i in range(len(data2)):
-#     for j in range(len(data2[0])):
-#         print(data2[i][j])
-                
+                if cellID == 0:
+                    data2[y][x] = 1
+                    continue
+                if cellID == 1:
+                    data2[y][x] = current_cell_value * (1-(same_kval_factor*same_kval_factor))
+                    continue
+                else:
+                    P_same_kval = current_cell_value * (1 - same_kval_factor)
+                    data2[y][x] = P_same_kval
+                    cellID = 1
+                    k_val_dictionary[(x,y)] = cellID
+# print(k_val_dictionary)
  
-# P_wall_in_between = current_cell_value*(1+1/distanceToNextKValue)               
-# k1vals = k1vals + newk1vals      
-# k0vals = k0vals + newk0vals   
-
-# Cells shared by k and k-1 vals are walls
-# for k1 in k1vals:
-#     for k0 in k0vals:
-#         y2, x2 = k1[1], k1[0]
-#         y1, x1 = k0[1], k0[0]
-#         point1 = np.array((x1,y1))
-#         point2 = np.array((x2,y2))
-#         distanceBetweenKValues = int(np.linalg.norm(point2-point1))
-#         minX,maxX = min(x1,x2), max(x1,x2)
-#         minY, maxY = min(y1,y2), max(y1,y2)
-#         if k0 == k0vals[0] and k1 == k1vals[1]:
-#             print(point1, point2)
-#             print(distanceBetweenKValues)
-#             print(minX, maxX)
-#             print(minY, maxY)
-#         for i in range(minX+1, maxX+1):
-#             for j in range(minY+1, maxY):
-#                 current_cell_value=data2[i][j]
-#                 P_wall_in_between = current_cell_value*(1+1/distanceBetweenKValues)
-#                 data2[i][j] = P_wall_in_between
-#                 if k0 == k0vals[0] and k1 == k1vals[1]:
-#                     print(current_cell_value, i, j)
-#                     print('p:',P_wall_in_between)
-
+plotGrid(data, desired_height, desired_width)
 plotGrid(data2, desired_height, desired_width)
 
