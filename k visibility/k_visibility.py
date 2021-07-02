@@ -56,7 +56,7 @@ for coord in coordinates:
             
     i+=1
 plt.plot(routerx, routery, 'go') # plot router point   
-#plt.show()
+
 
 # STEP 2) Checking ray-poly intersections
 # -------------------------------------------------------------------------
@@ -71,25 +71,69 @@ def extendRay(routerPoint, vertex):
     x3,y3 = p3[0], p3[1]
     return (x3,y3)
 
+# Get intersection points
+intpoints = {}
 for v in criticalvertices:
     rc = LineString([routerPoint, v])
     v2 = extendRay(routerPoint, v)
     rc2 = LineString([v, v2])
     a = poly.exterior.intersection(rc2)
     plt.plot(*rc2.xy, 'k--',linewidth=2.0,)
+    intpoints[v] = []
     if a.geom_type == 'MultiPoint':
         for i in range(len(a)):
             b = tuple(a.bounds)
             ax, ay = a[i].x, a[i].y
             coord = (ax, ay)
             if coord not in coordinates:
+                intpoints[v].append(coord)
+            #     if v not in intpoints: intpoints[v] = coord
+            #     else:
+            #         intpoints[v].extend(coord)
                 plt.plot(ax, ay, 'ko')
     elif a.geom_type == 'Point':
         b = tuple(a.coords[0])
         if b not in coordinates:
+            intpoints[v].append(b)
             plt.plot(*a.coords.xy[0], *a.coords.xy[1], 'ko')
 
-    
+# +1/-1 rule
+def isLeftTurn(vi, viPrev, viNext):
+    # given a vertex, determine if CW or CCW
+    # returns True if CCW (left turn), returns False if CW (right turn)
+    # print(vi, viPrev, viNext)
+    return ((vi[0] - viPrev[0])*(viNext[1]-vi[1]) - (vi[1]-viPrev[1])*(viNext[0]-vi[0]) > 0  )
+
+def onPositiveSide(vi, viPrev, routerx, routery):
+    # given a vertex, determine if vPrev is on positive side of the ray 
+    # ray is defined as line connecting transmitter coords to vi coords
+    line = {'x1': routerx,'y1':routery,'x2':vi[0],'y2':vi[1]}
+    p1 = {'x':viPrev[0],'y':viPrev[1]}
+    return (( (line['y1'] - line['y2'])*(p1['x'] - line['x1'])+(line['x2']- line['x1'])*(p1['y']-line['y1']) )>0)
+i=0
+pointIDs={} 
+for v in criticalvertices:
+     if i!= len(coordinates):
+         vprev = coordinates[i-1]
+         vnext = coordinates[i+1]
+         if isLeftTurn(v, vprev, vnext):
+             if onPositiveSide(v, vprev, routerx, routery):
+                 pointIDs[v] = 1
+             else:
+                 pointIDs[v] = -1
+         else:
+             if onPositiveSide(v, vprev, routerx, routery):
+                 pointIDs[v] = -1
+             else:
+                 pointIDs[v] = 1
+     i+=1
+                
+# +2/-2 rule
+
+
+
+
+
 
 # Show final result
 plt.xlim(50, 900)
