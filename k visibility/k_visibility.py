@@ -12,7 +12,7 @@ verticesArray = ([462., 636.], [434., 416.], [599., 382.],[424., 277.],
                     [100., 474.], [227., 443.], [217., 264.], [351., 264.], [324., 529.],
                     [211., 621.])
 verticesArray = list(verticesArray)
-verticesArray.reverse()
+# verticesArray.reverse()
 points = []
 for v in verticesArray:
     px, py = v[0], -v[1]
@@ -75,6 +75,7 @@ def extendRay(routerPoint, vertex):
 
 # Get intersection points
 intpoints = {}
+qpoints = []
 for v in criticalvertices:
     rc = LineString([routerPoint, v])
     v2 = extendRay(routerPoint, v)
@@ -89,6 +90,7 @@ for v in criticalvertices:
             coord = (ax, ay)
             if coord not in coordinates:
                 intpoints[v].append(coord)
+                qpoints.append(coord)
             #     if v not in intpoints: intpoints[v] = coord
             #     else:
             #         intpoints[v].extend(coord)
@@ -97,13 +99,13 @@ for v in criticalvertices:
         b = tuple(a.coords[0])
         if b not in coordinates:
             intpoints[v].append(b)
+            qpoints.append(b)
             plt.plot(*a.coords.xy[0], *a.coords.xy[1], 'ko')
 
 # +1/-1 rule
 def isLeftTurn(vi, viPrev, viNext):
     # given a vertex, determine if CW or CCW
     # returns True if CCW (left turn), returns False if CW (right turn)
-    # print(vi, viPrev, viNext)
     return ((vi[0] - viPrev[0])*(viNext[1]-vi[1]) - (vi[1]-viPrev[1])*(viNext[0]-vi[0]) > 0  )
 
 def onPositiveSide(vi, viPrev, routerx, routery):
@@ -114,8 +116,8 @@ def onPositiveSide(vi, viPrev, routerx, routery):
     return (( (line['y1'] - line['y2'])*(p1['x'] - line['x1'])+(line['x2']- line['x1'])*(p1['y']-line['y1']) )>0)
 i=0
 pointIDs={} 
-for v in criticalvertices:
-     if i!= len(coordinates):
+for v in coordinates:
+     if i!= len(coordinates) and v in criticalvertices:
          vprev = coordinates[i-1]
          vnext = coordinates[i+1]
          if isLeftTurn(v, vprev, vnext):
@@ -136,7 +138,7 @@ def get_v_j_prev(coordinates, q):
     for coord in coordinates:
         if i != len(coordinates)-1:
             pt1 = np.array(coord)
-            pt2 = np.array(coordinates[i+1])
+            pt2 = np.array(coordinates[i-1])
             pt3 = np.array(q)
             d12 = int(np.linalg.norm(pt2-pt1))
             d13 = int(np.linalg.norm(pt3-pt1))
@@ -162,7 +164,6 @@ for v in coordinates:
     if i!= 0 and v in criticalvertices: 
         v_i_prev = coordinates[i-1]
         qpts = intpoints[v] # list of intersection points for critical ray
-        print('crit vertex:', v, )
         if qpts is not []:
             for q in qpts:
                 v_j_prev = get_v_j_prev(coordinates, q)
@@ -174,8 +175,60 @@ for v in coordinates:
                     pointIDs[q] = 2
     i+=1
 
+# Step 2c - labelling edge segments
+def insertQ(allpts, q):
+    i=0
+    allpts2=allpts.copy()
+    for p in allpts2:
+       if i != len(allpts2)-1: 
+           p1 = np.array(p)
+           p2 = np.array(allpts[i+1])
+           p3 = np.array(q)
+           d12 = int(np.linalg.norm(p2-p1))
+           d13 = int(np.linalg.norm(p3-p1))
+           d23 = int(np.linalg.norm(p2-p3))
+           if d12-1 == d13 + d23 or d12 == d13 + d23:
+               allpts.insert(i+1, tuple(p3))
+       i+=1
 
+    return allpts
 
+allpts = coordinates.copy()
+# Create list of all crit vertices and intersection pts, in ccw order around poly
+for q in qpoints:
+    allpts = insertQ(allpts,q)
+    
+allpts2=[]
+for pt in allpts:
+    if pt in criticalvertices:
+        allpts2.append(pt)
+    elif pt in qpoints:
+        allpts2.append(pt)
+    
+allpts = allpts2
+# allpts.reverse()
+
+# Get coords of point z and plot, insert into allpts
+temp_pt = (routerx+100, routery)
+temp_ray = LineString([routerPoint, temp_pt])
+horiz_int = poly.exterior.intersection(temp_ray)
+zx, zy = horiz_int.x, horiz_int.y
+z = (zx, zy)
+plt.plot(zx,zy,'mo')
+allpts.insert(0, z)
+
+# Obtain edge segment vals
+polyvalue=0
+segmentvals = []
+for pt in allpts:
+    if pt == allpts[0]:
+        polyvalue=0
+        segmentvals.append(polyvalue) #keep track of segment "ahead" of pt
+    else:
+        ptID = pointIDs[pt]
+        polyvalue = polyvalue + ptID
+        segmentvals.append(polyvalue)
+       
 # Show final result
 plt.xlim(50, 900)
 plt.ylim(-700, 0)
