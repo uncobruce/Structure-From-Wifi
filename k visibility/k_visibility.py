@@ -4,7 +4,13 @@ import numpy as np
 import cv2
 import math
 from bresenham import bresenham
-
+import sys
+from shapely.ops import polygonize, polygonize_full
+from descartes import PolygonPatch
+from matplotlib.collections import PatchCollection
+from shapely.ops import cascaded_union
+from matplotlib.path import Path
+import matplotlib.patches as patches
 # Create list of points from given vertices
 verticesArray = ([462., 636.], [434., 416.], [599., 382.],[424., 277.],   
                     [709., 197.], [702., 384.], [850., 496.], [877.,  23.],
@@ -73,6 +79,7 @@ def extendRay(routerPoint, vertex):
     x3,y3 = p3[0], p3[1]
     return (x3,y3)
 
+
 # Get intersection points
 intpoints = {}
 qpoints = []
@@ -91,9 +98,6 @@ for v in criticalvertices:
             if coord not in coordinates:
                 intpoints[v].append(coord)
                 qpoints.append(coord)
-            #     if v not in intpoints: intpoints[v] = coord
-            #     else:
-            #         intpoints[v].extend(coord)
                 plt.plot(ax, ay, 'ko')
     elif a.geom_type == 'Point':
         b = tuple(a.coords[0])
@@ -101,6 +105,8 @@ for v in criticalvertices:
             intpoints[v].append(b)
             qpoints.append(b)
             plt.plot(*a.coords.xy[0], *a.coords.xy[1], 'ko')
+    
+
 
 # +1/-1 rule
 def isLeftTurn(vi, viPrev, viNext):
@@ -194,19 +200,17 @@ def insertQ(allpts, q):
     return allpts
 
 allpts = coordinates.copy()
+
 # Create list of all crit vertices and intersection pts, in ccw order around poly
 for q in qpoints:
-    allpts = insertQ(allpts,q)
-    
+    allpts = insertQ(allpts,q)  
 allpts2=[]
 for pt in allpts:
     if pt in criticalvertices:
         allpts2.append(pt)
     elif pt in qpoints:
-        allpts2.append(pt)
-    
-allpts = allpts2
-# allpts.reverse()
+        allpts2.append(pt)  
+
 
 # Get coords of point z and plot, insert into allpts
 temp_pt = (routerx+100, routery)
@@ -215,21 +219,186 @@ horiz_int = poly.exterior.intersection(temp_ray)
 zx, zy = horiz_int.x, horiz_int.y
 z = (zx, zy)
 plt.plot(zx,zy,'mo')
+allpts2.insert(0, z)
 allpts.insert(0, z)
-
+pointIDs[z] = 1000
 # Obtain edge segment vals
 polyvalue=0
 segmentvals = []
-for pt in allpts:
-    if pt == allpts[0]:
+for pt in allpts2:
+    if pt == allpts2[0]:
         polyvalue=0
         segmentvals.append(polyvalue) #keep track of segment "ahead" of pt
     else:
         ptID = pointIDs[pt]
         polyvalue = polyvalue + ptID
         segmentvals.append(polyvalue)
-       
+        
+
+# STEP 3) Constructing k-visibility regions
+# -------------------------------------------------------------------------
+# Plot the bounding box
+bbpts = []
+bbpts2 =[]
+p1 = Point(55, -695)
+p2 = Point(55, 10)
+p3 = Point(905, 10)
+p4 = Point(905, -695)
+points = (p4,p3,p2,p1)
+boundingbox = Polygon(points)
+for pt in points:
+    ptx, pty = pt.x, pt.y
+    # bbpts.append((ptx,pty))
+    bbpts2.append((ptx,pty))
+      
+# Add bounding box intersections to intpoints
+for v in criticalvertices:
+    rc = LineString([routerPoint, v])
+    v2 = extendRay(routerPoint, v)
+    rc2 = LineString([v, v2])
+    a = boundingbox.exterior.intersection(rc2)
+    if a.geom_type == 'MultiPoint':
+        for i in range(len(a)):
+            b = tuple(a.bounds)
+            ax, ay = a[i].x, a[i].y
+            coord = (ax, ay)
+            if coord not in coordinates:
+                intpoints[v].append(coord)
+                qpoints.append(coord)
+                bbpts.append(coord)
+                bbpts2.append(coord)
+                plt.plot(ax, ay, 'ko')
+    elif a.geom_type == 'Point':
+        b = tuple(a.coords[0])
+        if b not in coordinates:
+            intpoints[v].append(b)
+            qpoints.append(b)
+            bbpts.append(b)
+            bbpts2.append(b)
+
+            plt.plot(*a.coords.xy[0], *a.coords.xy[1], 'ko')
+
+
+# Represent all coords by their next segment vals
+segmentvalsdict = {}
+for i in range(len(allpts2)):
+    point = allpts2[i]
+    segmentvalsdict[point] = segmentvals[i]
+    
+currentsegval = None
+for coord in allpts:
+    if coord in allpts2:
+        currentsegval = segmentvalsdict[coord]
+    else:
+        segmentvalsdict[coord] = currentsegval
+        
+for point in bbpts:
+    for val_list in intpoints.values():
+        if point in val_list:
+            pointIndex = val_list.index(point)
+            if pointIndex > 0:
+                pointIndex-=1
+                beforept = val_list[pointIndex]
+            elif pointIndex == 0:
+                for key in intpoints.keys():
+                    if intpoints[key] == val_list:
+                        beforept = key
+    beforept_segval = segmentvalsdict[beforept]
+    segmentvalsdict[point] = beforept_segval
+    pointIDs[point] = 2
+ax = plt.gca()
+k2lines=[]
+k2linestrings = []
+for vertex in criticalvertices:
+    if segmentvalsdict[vertex] <= 2:
+        rc = LineString([routerPoint, vertex])
+        k2lines.append(((routerx,routery),vertex))
+        k2linestrings.append(rc)
+
+     
+
+i=0
+for pt in allpts:
+    if segmentvalsdict[pt] == 2 and pt != allpts[len(allpts)-1]:
+        nextpt = allpts[i+1]
+        rc = LineString([pt, nextpt])
+        # plt.plot(*rc.xy, 'k',linewidth=2.0,)
+        k2lines.append((pt,nextpt))
+        k2lines.append(((routerx,routery),nextpt))
+        k2lines.append((pt,(routerx,routery)))
+        k2linestrings.append(rc)
+        # for qlist in intpoints.values():
+        #     if pt in qlist:
+        #         ptindex = qlist.index(pt)
+        #         nextpt2 = (routerx,routery)
+        #         k2lines.append((pt,nextpt2))
+        #         rc = LineString([pt, nextpt])
+        #         plt.plot(*rc.xy, 'k',linewidth=2.0,)
+    i+=1
+for critvertex in intpoints.keys():
+    intersectionpts = intpoints[critvertex]
+    for pt in intersectionpts:
+        if pt not in bbpts:
+            ptPolyIndex = allpts.index(pt)
+            prevPoint = allpts[ptPolyIndex-1]
+            nextPoint = allpts[ptPolyIndex+1]
+        if segmentvalsdict[pt] <= 2:
+
+            endpt = pt
+            rc = LineString([critvertex, endpt])
+            # plt.plot(*rc.xy, 'k',linewidth=2.0,)
+            k2linestrings.append(rc)
+            k2lines.append((critvertex,endpt))
+            if pt == intersectionpts[len(intersectionpts)-2] and segmentvalsdict[prevPoint] > 2:
+                endpt = pt
+                rc = LineString([critvertex, endpt])
+                k2lines.append((critvertex,endpt))
+                k2linestrings.append(rc)
+                break
+            if pt not in bbpts and segmentvalsdict[pt] < 2 and segmentvalsdict[prevPoint] == 2:
+                endpt1 = pt
+                endpt2 = intersectionpts[len(intersectionpts)-1]
+                k2lines.append((endpt1,endpt2))
+
+        elif pt not in bbpts and segmentvalsdict[prevPoint] == 2:
+            endpt = pt
+            rc = LineString([critvertex, endpt])
+            k2linestrings.append(rc)
+            k2lines.append((critvertex,endpt))
+            break   
+lines = []
+bbpts.sort()
+for i in range(len(bbpts)-1):
+    pt1 = (bbpts[i][0], bbpts[i][1])
+    pt2 = (bbpts[i+1][0], bbpts[i+1][1])
+    
+k2lines.append((((447.5085324232082, 10.0)),((307.124183006536, 10.0))))
+bb1 = LineString([(447.5085324232082, 10.0), (307.124183006536, 10.0)])
+# plt.plot(*bb1.xy, 'k',linewidth=2.0,)
+k2linestrings.append(bb1)
+k2lines.append((((55.0, -459.6)),(55,-695)))
+bb2 = LineString([(55.0, -459.6), (55,-695)])
+# plt.plot(*bb2.xy, 'k',linewidth=2.0,)
+k2linestrings.append(bb2)
+k2lines.append((((905,-695)),(55,-695)))
+bb3 = LineString([(905,-695), (55,-695)])
+# plt.plot(*bb3.xy, 'k',linewidth=2.0,)
+k2linestrings.append(bb3)
+k2lines.append((((905,-695)),(905.0, -486.9555555555556)))
+bb4 = LineString([(905,-695), (905.0, -486.9555555555556)])
+k2linestrings.append(bb4)
+# plt.plot(*bb4.xy, 'k',linewidth=2.0,)
+
+
+k2region = list(polygonize(k2lines))
+polygons = [polygon for polygon in k2region]
+new_pol = cascaded_union(polygons) 
+polygon2, dangles, cuts, invalids = polygonize_full(k2lines)
+k2fill = PolygonPatch(new_pol,facecolor='#cccccc', edgecolor='#999999')
+ax.add_patch(k2fill)
+
+
 # Show final result
-plt.xlim(50, 900)
-plt.ylim(-700, 0)
+plt.xlim(50, 908)
+plt.ylim(-697, 15)
 plt.show()
