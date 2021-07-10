@@ -433,7 +433,6 @@ def getBoundingBoxPoints(startpt, total_boundingboxpts_sorted, bbpts):
     for i in range(startIndex, len(total_boundingboxpts_sorted)):
         point = total_boundingboxpts_sorted[i]
         if point in bbpts: # break if point is an intersection point
-            print(point)
             boundingboxpoints.append(point)
             break
         boundingboxpoints.append(point)
@@ -444,16 +443,38 @@ for startpt in boundingbox_startpts:
     linepts = getBoundingBoxPoints(startpt, total_boundingboxpts_sorted, bbpts)
     linepts.insert(0,startpt)
     k2BoundingBoxLines.append(linepts)
-    print(linepts)
  
-
+def completeBoundingBoxLines(startpt, kvalue, segmentvalsdict, total_boundingboxpts_sorted):
+    startIndex = total_boundingboxpts_sorted.index(startpt)
+    reshuffledBBPts_end = total_boundingboxpts_sorted[startIndex:]
+    reshuffledBBPts_start = total_boundingboxpts_sorted[0:startIndex]
+    reshuffledBBPts = reshuffledBBPts_end + reshuffledBBPts_start
+    continuedBBPts = []
+    for pt in reshuffledBBPts:
+        continuedBBPts.append(pt)
+        if pt in segmentvalsdict.keys() and segmentvalsdict[pt] >=2:
+            return continuedBBPts
+            
+newBBLines=[]
 for line in k2BoundingBoxLines:
     if line[-1] in boundingboxvertices:
-        
+        continuedBBPoints = completeBoundingBoxLines(line[-1], 2, segmentvalsdict, total_boundingboxpts_sorted)
+        continuedBBLines = makeLinesFromPointsList(continuedBBPoints)
+        for line2 in continuedBBLines:
+            newBBLines.append(line2)
+for line in newBBLines:
+    k2BoundingBoxLines.append(line)
 
+for pt in bbpts:
+    if segmentvalsdict[pt] <=2:
+        line = (routerpt, pt)
+        k2BoundingBoxLines.append(line)
+        rc = LineString([routerpt, pt])
+        plt.plot(*rc.xy, 'k',linewidth=2.0,)
 
 k2region = list(polygonize(k2lines))
 k2region2 = list(polygonize(k2lines_secondary))
+k2region3 = list(polygonize(k2BoundingBoxLines))
 polygons = [polygon for polygon in k2region]
 new_pol = cascaded_union(polygons) 
 
@@ -461,8 +482,10 @@ new_pol = cascaded_union(polygons)
 polygons2 = [polygon for polygon in k2region2]
 new_pol2 = cascaded_union(polygons2) 
 
+polygons3 = [polygon for polygon in k2region3]
+new_pol3 = cascaded_union(polygons3) 
 polygon2, dangles, cuts, invalids = polygonize_full(k2lines)
-total_polygons = [polygon for polygon in k2region] + [polygon for polygon in k2region2] 
+total_polygons = [polygon for polygon in k2region] + [polygon for polygon in k2region2] + [polygon for polygon in k2region3]
 polygon_final = cascaded_union(total_polygons)
 
 k2fill = PolygonPatch(polygon_final,facecolor='#cccccc', edgecolor='#999999')
