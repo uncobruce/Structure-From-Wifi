@@ -8,7 +8,7 @@ import sys
 from shapely.ops import polygonize, polygonize_full
 from descartes import PolygonPatch
 from matplotlib.collections import PatchCollection
-from shapely.ops import cascaded_union
+from shapely.ops import cascaded_union, linemerge
 from matplotlib.path import Path
 import matplotlib.patches as patches
 # Create list of points from given vertices
@@ -220,7 +220,6 @@ zx, zy = horiz_int.x, horiz_int.y
 z = (zx, zy)
 plt.plot(zx,zy,'mo')
 allpts2.insert(0, z)
-allpts.insert(0, z)
 pointIDs[z] = 1000
 # Obtain edge segment vals
 polyvalue=0
@@ -233,7 +232,8 @@ for pt in allpts2:
         ptID = pointIDs[pt]
         polyvalue = polyvalue + ptID
         segmentvals.append(polyvalue)
-        
+
+
 
 # STEP 3) Constructing k-visibility regions
 # -------------------------------------------------------------------------
@@ -274,7 +274,6 @@ for v in criticalvertices:
             qpoints.append(b)
             bbpts.append(b)
 
-            plt.plot(*a.coords.xy[0], *a.coords.xy[1], 'ko')
 
 # Represent all coords by their next segment vals
 segmentvalsdict = {}
@@ -303,198 +302,235 @@ for point in bbpts:
     beforept_segval = segmentvalsdict[beforept]
     segmentvalsdict[point] = beforept_segval
     pointIDs[point] = 2
-ax = plt.gca()
-k2lines=[]
-k2lines_secondary=[]
-k2linestrings = []
-routerpt = (routerx, routery)
-for key in intpoints.keys():
-    intersectionpts = intpoints[key]
-    if len(intersectionpts) > 1:
-        endofPoly = intersectionpts[len(intersectionpts)-2]
+
+segmentLines=[]
+segmentLinesDict={}
+for i in range(len(allpts)-1):    
+    pt1 = allpts[i]
+    pt2 = allpts[i+1]
+    line = (pt1,pt2)
+    segmentLines.append(line)
+    segmentvalue = segmentvalsdict[pt1]
+    if segmentvalue not in segmentLinesDict:
+        segmentLinesDict[segmentvalue] = [line]
     else:
-        endofPoly = key
-    k2lines.append((routerpt,endofPoly))
-    rc = LineString([routerpt, endofPoly])
-    plt.plot(*rc.xy, 'k',linewidth=2.0,)
-
-     
-
-i=0
-for pt in allpts:
-    if segmentvalsdict[pt] == 2 and pt != allpts[len(allpts)-1]:
-        nextpt = allpts[i+1]
-        rc = LineString([pt, nextpt])
-        plt.plot(*rc.xy, 'k',linewidth=2.0,)
-        k2lines.append((pt,nextpt))
-        for vals in intpoints.values():
-            if pt in vals:
-                if pt != vals[len(vals)-2]:
-                    k2lines_secondary.append((routerpt,pt))
-                    k2lines_secondary.append((routerpt,nextpt))
-                    k2lines_secondary.append((pt,nextpt))
-            elif nextpt in vals:
-                if nextpt != vals[len(vals)-2]:
-                    k2lines_secondary.append((routerpt,pt))
-                    k2lines_secondary.append((routerpt,nextpt))
-                    k2lines_secondary.append((pt,nextpt))         
-    i+=1
+        segmentLinesDict[segmentvalue].append(line)
         
-# Dealing with bounding box areas
-
-def sortBoundingBoxCCW(boundingboxlist):
-    listofpoints = np.array(bbpts2)
-    minx,maxx = min(listofpoints[:,0]),max(listofpoints[:,0])
-    miny,maxy = min(listofpoints[:,1]),max(listofpoints[:,1])
-    new_list = [(maxx,miny),(maxx,maxy),(minx,maxy),(minx,miny)] # y coords are inverted in matplotlib
-    return new_list
-
-boundingboxvertices = sortBoundingBoxCCW(bbpts2)
-
-def getBoundingBoxLines(boundingboxvertices):
-    bblines=[]
-    for i in range(len(boundingboxvertices)):
-        if i != len(boundingboxvertices)-1:
-            pt1 = boundingboxvertices[i]
-            pt2 = boundingboxvertices[i+1]
-            line = [pt1,pt2]
-        else:
-            pt1 = boundingboxvertices[i]
-            pt2 = boundingboxvertices[0]
-            line = [pt1,pt2]
-        bblines.append(line)
-    return bblines
-
-boundingboxlines = getBoundingBoxLines(boundingboxvertices)
-
-def insertBoundingBoxIntersectionPoints(boundingboxlines, bbintpointslist):
-    for point in bbintpointslist:
-        pointx, pointy = point[0], point[1]
-        for line in boundingboxlines:
-            if pointy == line[0][1]: # horizontal point
-                if pointx < line[0][0] and pointx > line[len(line)-1][0]:
-                    line.insert((len(line)//2), (pointx,pointy))
-                elif pointx > line[0][0] and pointx < line[len(line)-1][0]:
-                    line.insert((len(line)//2), (pointx,pointy))
-            elif pointx == line[0][0]: # vertical point
-                if pointy > line[0][1] and pointy < line[len(line)-1][1]:
-                   line.insert((len(line)//2), (pointx,pointy)) 
-                elif pointy < line[0][1] and pointy > line[len(line)-1][1]:
-                   line.insert((len(line)//2), (pointx,pointy)) 
-                    
-    return boundingboxlines
-boundingboxlines = insertBoundingBoxIntersectionPoints(boundingboxlines, bbpts)
-boundingboxlines_sorted=[]
-for bbline in boundingboxlines:     
-    middlepts = bbline[1:len(bbline)-1]
-    if len(middlepts) > 1:
-        m1x, m1y = middlepts[0][0], middlepts[0][1]
-        m2x, m2y = middlepts[1][0], middlepts[1][1]
-    if m1x == m2x: #vertical pts
-        middlepts.sort()
-    elif m1y == m2y:
-        middlepts.sort(reverse=True)
-    bbline_sorted = [bbline[0]] + middlepts + [bbline[len(bbline)-1]]
-    boundingboxlines_sorted.append(bbline_sorted)
-    
-# print(boundingboxlines_sorted)
-total_boundingboxpts_sorted = []
-for line in boundingboxlines_sorted:
-    for pt in line:
-        if pt not in total_boundingboxpts_sorted:
-            total_boundingboxpts_sorted.append(pt)
-    
         
-def makeLinesFromPointsList(pointslist):
-    lineslist=[]
-    for i in range(len(pointslist)):
-        if i == len(pointslist)-1:
-            pt1 = pointslist[i]
-            pt2 = pointslist[0]
-            line = (pt1,pt2)
-            lineslist.append(line)
-        else:
-            pt1 = pointslist[i]
-            pt2 = pointslist[i+1]
-            line = (pt1,pt2)
-            lineslist.append(line)
-    return lineslist
-
-k2boundingboxpts=[]
-boundingbox_startpts=[]
-for point in total_boundingboxpts_sorted:
-    if point in segmentvalsdict.keys() and segmentvalsdict[point] < 2:
-        boundingbox_startpts.append(point)
-       
-def getBoundingBoxPoints(startpt, total_boundingboxpts_sorted, bbpts):
-    endptFound=False
-    boundingboxpoints=[]
-    startIndex=total_boundingboxpts_sorted.index(startpt)+1
-    for i in range(startIndex, len(total_boundingboxpts_sorted)):
-        point = total_boundingboxpts_sorted[i]
-        if point in bbpts: # break if point is an intersection point
-            boundingboxpoints.append(point)
-            break
-        boundingboxpoints.append(point)
-    return boundingboxpoints
-
-k2BoundingBoxLines = []
-for startpt in boundingbox_startpts:
-    linepts = getBoundingBoxPoints(startpt, total_boundingboxpts_sorted, bbpts)
-    linepts.insert(0,startpt)
-    k2BoundingBoxLines.append(linepts)
+routerpt = (routerx, routery)
+# Determine k region on and within polygon
+def getKRegionPolygonLines(kvalue, routerpt, segmentvalsdict, segmentLinesDict, allpts):
+    klines=[]
  
-def completeBoundingBoxLines(startpt, kvalue, segmentvalsdict, total_boundingboxpts_sorted):
-    startIndex = total_boundingboxpts_sorted.index(startpt)
-    reshuffledBBPts_end = total_boundingboxpts_sorted[startIndex:]
-    reshuffledBBPts_start = total_boundingboxpts_sorted[0:startIndex]
-    reshuffledBBPts = reshuffledBBPts_end + reshuffledBBPts_start
-    continuedBBPts = []
-    for pt in reshuffledBBPts:
-        continuedBBPts.append(pt)
-        if pt in segmentvalsdict.keys() and segmentvalsdict[pt] >=2:
-            return continuedBBPts
+    # for key in intpoints.keys():
+    #     intersectionpts = intpoints[key]
+    #     if len(intersectionpts) > 1:
+    #         endofPoly = intersectionpts[len(intersectionpts)-2]
+    #     else:
+    #         endofPoly = key
+    #     klines.append((routerpt,endofPoly))
+    
+    for key in segmentLinesDict:
+        if key == kvalue:
+            kvalueSegments = segmentLinesDict[key]
+    kvalsegments1, kvalsegments2 =[],[]
+    
+    for i in range(len(kvalueSegments)):
+        if i % 2 == 0:
+            kvalsegments1.append(kvalueSegments[i])
+        else:
+            kvalsegments2.append(kvalueSegments[i])
             
-newBBLines=[]
-for line in k2BoundingBoxLines:
-    if line[-1] in boundingboxvertices:
-        continuedBBPoints = completeBoundingBoxLines(line[-1], 2, segmentvalsdict, total_boundingboxpts_sorted)
-        continuedBBLines = makeLinesFromPointsList(continuedBBPoints)
-        for line2 in continuedBBLines:
-            newBBLines.append(line2)
-for line in newBBLines:
-    k2BoundingBoxLines.append(line)
+    for segment in kvalueSegments:   
+        pt1,pt2 = segment[0], segment[1]
+        if pt1 in allpts2:
+            klines.append((pt1, routerpt))
+        
+        if pt2 in allpts2:
+            klines.append((pt2, routerpt))
+            
+        klines.append(segment)
+    merge = linemerge(klines)
+    
+    a = list(merge)
+    lines1=[]
+    lines2=[]
+    i=0
+    for line in a:
+        if i % 2 == 0:
+            lines1.append(line)
+        else:
+            lines2.append(line)
+        i+=1
+    # i=0
+    # for pt in allpts:
+    #     if segmentvalsdict[pt] == kvalue and pt != allpts[len(allpts)-1]:
+    #         nextpt = allpts[i+1]
+    #         klines.append((pt,nextpt))
+    #         for vals in intpoints.values():
+    #             if pt in vals:
+    #                 if pt != vals[len(vals)-2]:
+    #                     klines_secondary.append((routerpt,pt))
+    #                     klines_secondary.append((routerpt,nextpt))
+    #                     klines_secondary.append((pt,nextpt))
+    #             elif nextpt in vals:
+    #                 if nextpt != vals[len(vals)-2]:
+    #                     klines_secondary.append((routerpt,pt))
+    #                     klines_secondary.append((routerpt,nextpt))
+    #                     klines_secondary.append((pt,nextpt))    
+    #     i+=1
+        
+     
+    return lines1, lines2
 
-for pt in bbpts:
-    if segmentvalsdict[pt] <=2:
-        line = (routerpt, pt)
-        k2BoundingBoxLines.append(line)
-        rc = LineString([routerpt, pt])
-        plt.plot(*rc.xy, 'k',linewidth=2.0,)
+# Determine k region along bounding box
+def getKRegionBoundingBoxLines(kvalue, routerpt, segmentvalsdict, bbpts, bbpts2):  
+    def sortBoundingBoxCCW(boundingboxlist):
+        listofpoints = np.array(bbpts2)
+        minx,maxx = min(listofpoints[:,0]),max(listofpoints[:,0])
+        miny,maxy = min(listofpoints[:,1]),max(listofpoints[:,1])
+        new_list = [(maxx,miny),(maxx,maxy),(minx,maxy),(minx,miny)] # y coords are inverted in matplotlib
+        return new_list
 
-k2region = list(polygonize(k2lines))
-k2region2 = list(polygonize(k2lines_secondary))
-k2region3 = list(polygonize(k2BoundingBoxLines))
-polygons = [polygon for polygon in k2region]
-new_pol = cascaded_union(polygons) 
+    boundingboxvertices = sortBoundingBoxCCW(bbpts2)
+    
+    def getBoundingBoxLines(boundingboxvertices):
+        bblines=[]
+        for i in range(len(boundingboxvertices)):
+            if i != len(boundingboxvertices)-1:
+                pt1 = boundingboxvertices[i]
+                pt2 = boundingboxvertices[i+1]
+                line = [pt1,pt2]
+            else:
+                pt1 = boundingboxvertices[i]
+                pt2 = boundingboxvertices[0]
+                line = [pt1,pt2]
+            bblines.append(line)
+        return bblines
+    
+    boundingboxlines = getBoundingBoxLines(boundingboxvertices)
+    
+    def insertBoundingBoxIntersectionPoints(boundingboxlines, bbintpointslist):
+        for point in bbintpointslist:
+            pointx, pointy = point[0], point[1]
+            for line in boundingboxlines:
+                if pointy == line[0][1]: # horizontal point
+                    if pointx < line[0][0] and pointx > line[len(line)-1][0]:
+                        line.insert((len(line)//2), (pointx,pointy))
+                    elif pointx > line[0][0] and pointx < line[len(line)-1][0]:
+                        line.insert((len(line)//2), (pointx,pointy))
+                elif pointx == line[0][0]: # vertical point
+                    if pointy > line[0][1] and pointy < line[len(line)-1][1]:
+                       line.insert((len(line)//2), (pointx,pointy)) 
+                    elif pointy < line[0][1] and pointy > line[len(line)-1][1]:
+                       line.insert((len(line)//2), (pointx,pointy)) 
+                        
+        return boundingboxlines
+    boundingboxlines = insertBoundingBoxIntersectionPoints(boundingboxlines, bbpts)
+    boundingboxlines_sorted=[]
+    for bbline in boundingboxlines:     
+        middlepts = bbline[1:len(bbline)-1]
+        if len(middlepts) > 1:
+            m1x, m1y = middlepts[0][0], middlepts[0][1]
+            m2x, m2y = middlepts[1][0], middlepts[1][1]
+        if m1x == m2x: #vertical pts
+            middlepts.sort()
+        elif m1y == m2y:
+            middlepts.sort(reverse=True)
+        bbline_sorted = [bbline[0]] + middlepts + [bbline[len(bbline)-1]]
+        boundingboxlines_sorted.append(bbline_sorted)
+        
+    # print(boundingboxlines_sorted)
+    total_boundingboxpts_sorted = []
+    for line in boundingboxlines_sorted:
+        for pt in line:
+            if pt not in total_boundingboxpts_sorted:
+                total_boundingboxpts_sorted.append(pt)
+        
+            
+    def makeLinesFromPointsList(pointslist):
+        lineslist=[]
+        for i in range(len(pointslist)):
+            if i == len(pointslist)-1:
+                pt1 = pointslist[i]
+                pt2 = pointslist[0]
+                line = (pt1,pt2)
+                lineslist.append(line)
+            else:
+                pt1 = pointslist[i]
+                pt2 = pointslist[i+1]
+                line = (pt1,pt2)
+                lineslist.append(line)
+        return lineslist
+    
+    boundingbox_startpts=[]
+    for point in total_boundingboxpts_sorted:
+        if point in segmentvalsdict.keys() and segmentvalsdict[point] < kvalue:
+            boundingbox_startpts.append(point)
+           
+    def getBoundingBoxPoints(startpt, total_boundingboxpts_sorted, bbpts):
+        boundingboxpoints=[]
+        startIndex=total_boundingboxpts_sorted.index(startpt)+1
+        for i in range(startIndex, len(total_boundingboxpts_sorted)):
+            point = total_boundingboxpts_sorted[i]
+            if point in bbpts: # break if point is an intersection point
+                boundingboxpoints.append(point)
+                break
+            boundingboxpoints.append(point)
+        return boundingboxpoints
+    
+    kBoundingBoxLines = []
+    for startpt in boundingbox_startpts:
+        linepts = getBoundingBoxPoints(startpt, total_boundingboxpts_sorted, bbpts)
+        linepts.insert(0,startpt)
+        kBoundingBoxLines.append(linepts)
+     
+    def completeBoundingBoxLines(startpt, kvalue, segmentvalsdict, total_boundingboxpts_sorted):
+        startIndex = total_boundingboxpts_sorted.index(startpt)
+        reshuffledBBPts_end = total_boundingboxpts_sorted[startIndex:]
+        reshuffledBBPts_start = total_boundingboxpts_sorted[0:startIndex]
+        reshuffledBBPts = reshuffledBBPts_end + reshuffledBBPts_start
+        continuedBBPts = []
+        for pt in reshuffledBBPts:
+            continuedBBPts.append(pt)
+            if pt in segmentvalsdict.keys() and segmentvalsdict[pt] >=kvalue:
+                return continuedBBPts
+                
+    newBBLines=[]
+    for line in kBoundingBoxLines:
+        if line[-1] in boundingboxvertices:
+            continuedBBPoints = completeBoundingBoxLines(line[-1], kvalue, segmentvalsdict, total_boundingboxpts_sorted)
+            continuedBBLines = makeLinesFromPointsList(continuedBBPoints)
+            for line2 in continuedBBLines:
+                newBBLines.append(line2)
+    for line in newBBLines:
+        kBoundingBoxLines.append(line)
+    
+    for pt in bbpts:
+        if segmentvalsdict[pt] <=kvalue:
+            line = (routerpt, pt)
+            kBoundingBoxLines.append(line)
+    print(kBoundingBoxLines)
+    return kBoundingBoxLines   
+
+def getKRegion(kvalue, routerpt, segmentvalsdict, segmentLinesDict, allpts, allpts2, bbpts, bbpts2):
+    ax = plt.gca()
+   
+    klines, klines_secondary = getKRegionPolygonLines(kvalue, routerpt, segmentvalsdict, segmentLinesDict, allpts)
+    kBoundingBoxLines = getKRegionBoundingBoxLines(kvalue,  routerpt, segmentvalsdict, bbpts, bbpts2)
+    kregion = list(polygonize(klines))
+    kregion2 = list(polygonize(klines_secondary))
+    kregion3 = list(polygonize(kBoundingBoxLines))
+    total_polygons = [polygon for polygon in kregion] + [polygon for polygon in kregion2]+ [polygon for polygon in kregion3]
+    polygon_final = cascaded_union(total_polygons)
+
+    k2fill = PolygonPatch(polygon_final,facecolor='#cccccc', edgecolor='None')
+    ax.add_patch(k2fill)
+    plt.xlim(50, 908)
+    plt.ylim(-697, 15)
+    plt.show()
+            
 
 
-polygons2 = [polygon for polygon in k2region2]
-new_pol2 = cascaded_union(polygons2) 
 
-polygons3 = [polygon for polygon in k2region3]
-new_pol3 = cascaded_union(polygons3) 
-polygon2, dangles, cuts, invalids = polygonize_full(k2lines)
-total_polygons = [polygon for polygon in k2region] + [polygon for polygon in k2region2] + [polygon for polygon in k2region3]
-polygon_final = cascaded_union(total_polygons)
-
-k2fill = PolygonPatch(polygon_final,facecolor='#cccccc', edgecolor='#999999')
-ax.add_patch(k2fill)
-
-
-
-
-# Show final result
-plt.xlim(50, 908)
-plt.ylim(-697, 15)
-plt.show()
+getKRegion(2, routerpt, segmentvalsdict, segmentLinesDict, allpts, allpts2, bbpts, bbpts2)
