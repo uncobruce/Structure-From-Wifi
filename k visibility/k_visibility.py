@@ -18,7 +18,8 @@ verticesArray = ([462., 636.], [434., 416.], [599., 382.],[424., 277.],
                     [100., 474.], [227., 443.], [217., 264.], [351., 264.], [324., 529.],
                     [211., 621.])
 verticesArray = list(verticesArray)
-# verticesArray.reverse()
+plt.xlim(50, 908)
+plt.ylim(-697, 15)
 points = []
 for v in verticesArray:
     px, py = v[0], -v[1]
@@ -248,7 +249,6 @@ points = (p4,p3,p2,p1)
 boundingbox = Polygon(points)
 for pt in points:
     ptx, pty = pt.x, pt.y
-    # bbpts.append((ptx,pty))
     bbpts2.append((ptx,pty))
       
 # Add bounding box intersections to intpoints
@@ -273,7 +273,10 @@ for v in criticalvertices:
             intpoints[v].append(b)
             qpoints.append(b)
             bbpts.append(b)
-
+plt.xlim(50, 908)
+plt.ylim(-697, 15)
+plt.show()
+            
 
 # Represent all coords by their next segment vals
 segmentvalsdict = {}
@@ -374,7 +377,6 @@ for bbline in boundingboxlines:
     bbline_sorted = [bbline[0]] + middlepts + [bbline[len(bbline)-1]]
     boundingboxlines_sorted.append(bbline_sorted)
     
-# print(boundingboxlines_sorted)
 total_boundingboxpts_sorted = []
 for line in boundingboxlines_sorted:
     for pt in line:
@@ -394,7 +396,6 @@ for key in intpoints.keys():
         lastPointonRay = qlist[-1]
         if lastPointonRay in total_boundingboxpts_sorted:
             nextBBpoint=total_boundingboxpts_sorted[total_boundingboxpts_sorted.index(lastPointonRay)+1]
-            print(lastPointonRay, nextBBpoint)
             if nextBBpoint in bbpts:   
                 segmentvalsdict[lastPointonRay] = beforept_segval+1
             else:
@@ -543,7 +544,6 @@ def getKRegionBoundingBoxLines(kvalue, routerpt, intpoints, boundingBoxMergedLin
         endofSegment = segment[-1][1]
         kBoundingBoxLines_secondary.append((routerpt,startofSegment))
         kBoundingBoxLines_secondary.append((routerpt,endofSegment))
-    print('---------------------------')
     kBoundingBoxLines = linemerge(kBoundingBoxLines)
     kBoundingBoxLines_secondary=linemerge(kBoundingBoxLines_secondary)
         
@@ -551,7 +551,6 @@ def getKRegionBoundingBoxLines(kvalue, routerpt, intpoints, boundingBoxMergedLin
     return kBoundingBoxLines , kBoundingBoxLines_secondary 
 
 def getKRegion(kvalue, routerpt, segmentvalsdict, segmentLinesDict, allpts, allpts2, intpoints, boundingBoxMergedLinesDict):
-    ax = plt.gca()
     
     klines, klines_secondary = getKRegionPolygonLines(kvalue, routerpt, segmentvalsdict, segmentLinesDict, allpts)
     kBoundingBoxLines, boundingBoxKValueSegments_secondary = getKRegionBoundingBoxLines(kvalue, routerpt, intpoints, boundingBoxMergedLinesDict)
@@ -564,14 +563,20 @@ def getKRegion(kvalue, routerpt, segmentvalsdict, segmentLinesDict, allpts, allp
         +[polygon for polygon in kregion4]
     
     polygon_final = cascaded_union(total_polygons)
+    return polygon_final
+    
+# Plot each k region
+facecolors=['red','yellow','blue','green','orange']
 
-    k2fill = PolygonPatch(polygon_final,facecolor='#cccccc', edgecolor='None')
-    ax.add_patch(k2fill)
-    plt.xlim(50, 908)
-    plt.ylim(-697, 15)
-    plt.show()
-            
+plt.plot(*poly.exterior.xy,'k')
+for i in range(len(segmentLinesDict.keys())-1, -1,-1):
+    ax=plt.gca()
+    print('facecolor:',facecolors[i],i)
+    kregion=getKRegion(i, routerpt, segmentvalsdict, segmentLinesDict, allpts, allpts2, intpoints, boundingBoxMergedLinesDict)
+    kfill = PolygonPatch(kregion,facecolor=facecolors[i], edgecolor='None')
+    ax.add_patch(kfill)
+    
+plt.xlim(50, 908)
+plt.ylim(-697, 15)
+plt.show()    
 
-
-
-getKRegion(1, routerpt, segmentvalsdict, segmentLinesDict, allpts, allpts2, intpoints, boundingBoxMergedLinesDict)
