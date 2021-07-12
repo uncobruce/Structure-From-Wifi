@@ -393,7 +393,12 @@ for key in intpoints.keys():
         beforept_segval = segmentvalsdict[key]
         lastPointonRay = qlist[-1]
         if lastPointonRay in total_boundingboxpts_sorted:
-            segmentvalsdict[lastPointonRay] = beforept_segval
+            nextBBpoint=total_boundingboxpts_sorted[total_boundingboxpts_sorted.index(lastPointonRay)+1]
+            print(lastPointonRay, nextBBpoint)
+            if nextBBpoint in bbpts:   
+                segmentvalsdict[lastPointonRay] = beforept_segval+1
+            else:
+                segmentvalsdict[lastPointonRay] = beforept_segval
         
 def makeLinesFromPointsList(pointslist):
         lineslist=[]
@@ -421,11 +426,7 @@ for segment in boundingBoxIndividualSegments:
         else:
             boundingBoxSegmentLinesDict[segmentvalsdict[pt1]].append(segment)
 
-for key in boundingBoxSegmentLinesDict.keys():
-    segments = boundingBoxSegmentLinesDict[key]
-    for seg in segments:
-        rc = LineString(seg)
-        plt.plot(*rc.xy, 'g',linewidth=4.0,)
+
 
 def segmentIsLabeled(segment, boundingBoxSegmentLinesDict):
     for segments in boundingBoxSegmentLinesDict.values():
@@ -460,14 +461,6 @@ for seg in labeledBBSegs:
         i+=1
     listofmergedsegs.append(mergedsegments)
 
-for line in listofmergedsegs:
-    if len(line) == 1:
-        rc = LineString(line[0])
-        plt.plot(*rc.xy, 'g',linewidth=4.0,)
-    else:
-        for seg in line:
-            rc = LineString(seg)
-            plt.plot(*rc.xy, 'b',linewidth=4.0,)
             
 boundingBoxMergedLinesDict = {}
 
@@ -487,14 +480,7 @@ for line in listofmergedsegs:
 def getKRegionPolygonLines(kvalue, routerpt, segmentvalsdict, segmentLinesDict, allpts):
     klines=[]
  
-    # for key in intpoints.keys():
-    #     intersectionpts = intpoints[key]
-    #     if len(intersectionpts) > 1:
-    #         endofPoly = intersectionpts[len(intersectionpts)-2]
-    #     else:
-    #         endofPoly = key
-    #     klines.append((routerpt,endofPoly))
-    
+
     for key in segmentLinesDict:
         if key == kvalue:
             kvalueSegments = segmentLinesDict[key]
@@ -516,7 +502,8 @@ def getKRegionPolygonLines(kvalue, routerpt, segmentvalsdict, segmentLinesDict, 
             
         klines.append(segment)
     merge = linemerge(klines)
-    
+    if merge.geom_type == 'LineString':
+        return merge, []
     a = list(merge)
     lines1=[]
     lines2=[]
@@ -527,24 +514,7 @@ def getKRegionPolygonLines(kvalue, routerpt, segmentvalsdict, segmentLinesDict, 
         else:
             lines2.append(line)
         i+=1
-    # i=0
-    # for pt in allpts:
-    #     if segmentvalsdict[pt] == kvalue and pt != allpts[len(allpts)-1]:
-    #         nextpt = allpts[i+1]
-    #         klines.append((pt,nextpt))
-    #         for vals in intpoints.values():
-    #             if pt in vals:
-    #                 if pt != vals[len(vals)-2]:
-    #                     klines_secondary.append((routerpt,pt))
-    #                     klines_secondary.append((routerpt,nextpt))
-    #                     klines_secondary.append((pt,nextpt))
-    #             elif nextpt in vals:
-    #                 if nextpt != vals[len(vals)-2]:
-    #                     klines_secondary.append((routerpt,pt))
-    #                     klines_secondary.append((routerpt,nextpt))
-    #                     klines_secondary.append((pt,nextpt))    
-    #     i+=1
-        
+   
      
     return lines1, lines2
 
@@ -552,111 +522,31 @@ def getKRegionPolygonLines(kvalue, routerpt, segmentvalsdict, segmentLinesDict, 
 def getKRegionBoundingBoxLines(kvalue, routerpt, intpoints, boundingBoxMergedLinesDict):  
     kBoundingBoxLines = []
     kBoundingBoxLines_secondary=[]
+    boundingBoxKValueSegments=[]
     boundingBoxKValueSegments_secondary=[]
     for key in boundingBoxMergedLinesDict:
         if key == kvalue:
             boundingBoxKValueSegments = boundingBoxMergedLinesDict[key]
         elif key < kvalue:
             boundingBoxKValueSegments_secondary = boundingBoxKValueSegments_secondary+boundingBoxMergedLinesDict[key]
-    # print(boundingBoxKValueSegments)       
-    print(boundingBoxKValueSegments_secondary)
-    for segment in boundingBoxKValueSegments:
-        # print(segment, '\n')
-        kBoundingBoxLines = kBoundingBoxLines + segment
-        startofSegment = segment[0][0]
-        # print('startofseg:',startofSegment)
-        endofSegment = segment[-1][1]
-        kBoundingBoxLines.append((routerpt,startofSegment))
-        kBoundingBoxLines.append((routerpt,endofSegment))
-        # print('endofseg:',endofSegment)
+    if boundingBoxKValueSegments is not []:
+        for segment in boundingBoxKValueSegments:
+            kBoundingBoxLines = kBoundingBoxLines + segment
+            startofSegment = segment[0][0]
+            endofSegment = segment[-1][1]
+            kBoundingBoxLines.append((routerpt,startofSegment))
+            kBoundingBoxLines.append((routerpt,endofSegment))
     
     for segment in boundingBoxKValueSegments_secondary:
-        # print(segment, '\n')
         kBoundingBoxLines_secondary = kBoundingBoxLines_secondary + segment
         startofSegment = segment[0][0]
-        # print('startofseg:',startofSegment)
         endofSegment = segment[-1][1]
         kBoundingBoxLines_secondary.append((routerpt,startofSegment))
         kBoundingBoxLines_secondary.append((routerpt,endofSegment))
-        # print('endofseg:',endofSegment)
     print('---------------------------')
-    # print(kBoundingBoxLines)
     kBoundingBoxLines = linemerge(kBoundingBoxLines)
     kBoundingBoxLines_secondary=linemerge(kBoundingBoxLines_secondary)
-        # pt1, pt2 = segment[0], segment[1]
-        # for key in intpoints.keys():
-        #     intersectionpts = intpoints[key]
-        #     if pt1 in intersectionpts:
-        #         kBoundingBoxLines.append((routerpt,pt1))
-        #         rc = LineString((routerpt,pt1))
-        #         plt.plot(*rc.xy, 'r',linewidth=4.0,)
-        #     elif pt2 in intersectionpts:
-        #         kBoundingBoxLines.append((routerpt,pt2))
-        #         rc = LineString((routerpt,pt2))
-        #         plt.plot(*rc.xy, 'r',linewidth=4.0,)
-        # kBoundingBoxLines.append(segment)
-                
-    #     rc = LineString(segment)
-    #     plt.plot(*rc.xy, 'r',linewidth=4.0,)
-    # print(kBoundingBoxLines)
-    # kBoundingBoxLines.append((routerpt,(55.0, -459.6)))
-    # kBoundingBoxLines.append((routerpt,(905.0, -486.9555555555556))) 
-    # kBoundingBoxLines.append(((55.0, -695.0), (905.0, -695.0)))  
-    # kBoundingBoxLines.append(((55.0, -459.6), (55.0, -695.0)))  
-    # kBoundingBoxLines.append(((905.0, -695.0), (905.0, -486.9555555555556)))  
         
-        
-    
-
-    
-    
-    # boundingbox_startpts=[]
-    # for point in total_boundingboxpts_sorted:
-    #     if point in segmentvalsdict.keys() and segmentvalsdict[point] < kvalue:
-    #         boundingbox_startpts.append(point)
-           
-    # def getBoundingBoxPoints(startpt, total_boundingboxpts_sorted, bbpts):
-    #     boundingboxpoints=[]
-    #     startIndex=total_boundingboxpts_sorted.index(startpt)+1
-    #     for i in range(startIndex, len(total_boundingboxpts_sorted)):
-    #         point = total_boundingboxpts_sorted[i]
-    #         if point in bbpts: # break if point is an intersection point
-    #             boundingboxpoints.append(point)
-    #             break
-    #         boundingboxpoints.append(point)
-    #     return boundingboxpoints
-    
-    # kBoundingBoxLines = []
-    # for startpt in boundingbox_startpts:
-    #     linepts = getBoundingBoxPoints(startpt, total_boundingboxpts_sorted, bbpts)
-    #     linepts.insert(0,startpt)
-    #     kBoundingBoxLines.append(linepts)
-     
-    # def completeBoundingBoxLines(startpt, kvalue, segmentvalsdict, total_boundingboxpts_sorted):
-    #     startIndex = total_boundingboxpts_sorted.index(startpt)
-    #     reshuffledBBPts_end = total_boundingboxpts_sorted[startIndex:]
-    #     reshuffledBBPts_start = total_boundingboxpts_sorted[0:startIndex]
-    #     reshuffledBBPts = reshuffledBBPts_end + reshuffledBBPts_start
-    #     continuedBBPts = []
-    #     for pt in reshuffledBBPts:
-    #         continuedBBPts.append(pt)
-    #         if pt in segmentvalsdict.keys() and segmentvalsdict[pt] >=kvalue:
-    #             return continuedBBPts
-                
-    # newBBLines=[]
-    # for line in kBoundingBoxLines:
-    #     if line[-1] in boundingboxvertices:
-    #         continuedBBPoints = completeBoundingBoxLines(line[-1], kvalue, segmentvalsdict, total_boundingboxpts_sorted)
-    #         continuedBBLines = makeLinesFromPointsList(continuedBBPoints)
-    #         for line2 in continuedBBLines:
-    #             newBBLines.append(line2)
-    # for line in newBBLines:
-    #     kBoundingBoxLines.append(line)
-    
-    # for pt in bbpts:
-    #     if segmentvalsdict[pt] <=kvalue:
-    #         line = (routerpt, pt)
-    #         kBoundingBoxLines.append(line)
 
     return kBoundingBoxLines , kBoundingBoxLines_secondary 
 
@@ -684,4 +574,4 @@ def getKRegion(kvalue, routerpt, segmentvalsdict, segmentLinesDict, allpts, allp
 
 
 
-getKRegion(1 , routerpt, segmentvalsdict, segmentLinesDict, allpts, allpts2, intpoints, boundingBoxMergedLinesDict)
+getKRegion(1, routerpt, segmentvalsdict, segmentLinesDict, allpts, allpts2, intpoints, boundingBoxMergedLinesDict)
