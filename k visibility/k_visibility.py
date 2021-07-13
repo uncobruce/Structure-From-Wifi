@@ -1,16 +1,12 @@
 import matplotlib.pyplot as plt
-from shapely.geometry import  Point, Polygon, LineString, GeometryCollection
+from shapely.geometry import  Point, Polygon, LineString
 import numpy as np
-import cv2
 import math
-from bresenham import bresenham
-import sys
-from shapely.ops import polygonize, polygonize_full
+from shapely.ops import polygonize
 from descartes import PolygonPatch
-from matplotlib.collections import PatchCollection
 from shapely.ops import cascaded_union, linemerge
-from matplotlib.path import Path
 import matplotlib.patches as patches
+
 # Create list of points from given vertices
 verticesArray = ([462., 636.], [434., 416.], [599., 382.],[424., 277.],   
                     [709., 197.], [702., 384.], [850., 496.], [877.,  23.],
