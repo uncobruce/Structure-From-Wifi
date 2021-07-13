@@ -26,3 +26,11 @@ print('number of vertices: ', len(corners))
 cv2.imshow('polygon', img)
 cv2.waitKey()
 cv2.destroyAllWindows()
+
+f = open("mapCorners.txt", "w") # write corners to text file
+for corner in corners:
+    x, y = corner[0]
+    x,y = int(x), int(y)
+    f.write(str((x,y)))
+    f.write("\n")
+f.close()
