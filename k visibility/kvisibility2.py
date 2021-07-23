@@ -43,7 +43,7 @@ vertexIntersections={}
 eps = 50
 for point in coordinates:
     rc = LineString([routerPoint, point])
-    plt.plot(*rc.xy, 'b', linewidth=0.75)
+    # plt.plot(*rc.xy, 'b', linewidth=0.75)
     if rc.intersects(poly):
         intersection = rc.intersection(poly)
         if intersection.geom_type == 'MultiLineString':
@@ -114,7 +114,7 @@ def removeClosePoints(points):
         p1 = np.array(points2[i])
         p2 = np.array(points2[i+1])
         distance = int(np.linalg.norm(p2-p1))
-        if distance < 5:
+        if distance < 10:
             points.remove(points2[i])
     return points
 
@@ -122,10 +122,9 @@ qIntersections={}
 for coord in coordinates:
     extendedpoint = extendRay(routerPoint, coord)
     extendedray = LineString([routerPoint, extendedpoint])
-    plt.plot(*extendedray.xy,'k', linewidth=0.25)
+    # plt.plot(*extendedray.xy,'k', linewidth=0.25)
     if extendedray.intersects(poly):
         intersection = extendedray.intersection(poly)
-        # print(intersection)
         if intersection.geom_type == 'LineString':
             numIntersections=0
             intersectionpt = intersection.coords[1]
@@ -135,7 +134,6 @@ for coord in coordinates:
         elif intersection.geom_type == 'GeometryCollection':
             numIntersections=0
             intersectionpt = (int(intersection[-1].coords[1][0]), int(intersection[-1].coords[1][1]))
-            # print('intersectionpt: ',intersectionpt, intersection[-1])
             for geometry in intersection:
                 if geometry.geom_type == 'Point':
                     continue
@@ -146,7 +144,7 @@ for coord in coordinates:
                         endpt = np.array(intersectionpt)
                         compare = np.array(coord)
                         distance = int(np.linalg.norm(compare-endpt))
-                        if distance < 5:
+                        if distance < 10:
                             numIntersections+=1 # ensure intersections are not the actual endpoint
                         else:
                             numIntersections+=2
@@ -180,25 +178,17 @@ for coord in coordinates:
                     endpt = np.array(endpoint)
                     compare = np.array(point)
                     distance = int(np.linalg.norm(compare-endpt))
-                    if distance < 10:
+                    if distance < 5:
                         pointsCrossed.append(((int(p2[0]), int(p2[1]))))
                         numIntersections+=1 # ensure intersections are not the actual endpoint
             pointsCrossed = removeClosePoints(pointsCrossed)
             numIntersections = len(pointsCrossed)
             if intersectionpt not in qIntersections.keys():
                 qIntersections[intersectionpt] = numIntersections
-            print(intersectionpt, '|', intersection, numIntersections)
             
 
 
 qpoints = list(qIntersections.keys())
-
-for q in qpoints:
-    intray = LineString([routerPoint, q])
-    plt.plot(*intray.xy, 'k', linewidth = 0.4)
-
-
-
 
 # Insert q points into coordinates list
 def insertQ(coordinates, q):
@@ -268,10 +258,6 @@ for seg in polysegments:
         finalSegmentLinesDict[segval].append(seg)
 
 
-
-plt.plot(1336,891,'ro') # pointval = 3
-plt.plot(1336,1025,'ro') # pointval = 2
-
 # Connect segments between vertices for desired k value          
 def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt,facecolor):   
     kvaluesegments=[]
@@ -280,7 +266,6 @@ def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLine
             kvaluesegments = kvaluesegments + finalSegmentLinesDict[key]
 
     totalpolygons = []
-    ax=plt.gca() 
     for segment in kvaluesegments:
         p1,p2 = segment[0], segment[1]
         line1 = (p1,p2)
@@ -289,13 +274,17 @@ def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLine
         region = list(polygonize((line1,line2, line3)))
         poly = region[0]
         totalpolygons.append(poly)
-        polygon_final = cascaded_union(poly)
-        kfill = PolygonPatch(polygon_final,facecolor='#cccccc', edgecolor='None')
-        ax.add_patch(kfill)
+
     return totalpolygons      
 
     
 
-
-getKRegionVertexLines(3, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt,'red')
+ax=plt.gca() 
+kregion = getKRegionVertexLines(0, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt,'red')
+kregionpolys = [poly for poly in kregion]
+polygon_final = cascaded_union(kregionpolys)
+kfill = PolygonPatch(polygon_final,facecolor='#cccccc', edgecolor='None')
+ax.add_patch(kfill)
 plt.show()
+
+
