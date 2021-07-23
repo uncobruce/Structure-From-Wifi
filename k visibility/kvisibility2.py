@@ -215,7 +215,7 @@ for q in qpoints:
 
 
 offsetIntersections={}
-# Plot offset rays for every qpoint to ensure points behind vertices are seen
+# Plot offset rays for every qpoint to ensure points behind vertices are seen for k0 regions
 for q in qpoints:
     angle = math.atan(q[1]/q[0])
     angleoffset = -0.2
@@ -225,32 +225,7 @@ for q in qpoints:
     rayoffset = LineString([routerpt, extendedoffsetpt])
     intersection = rayoffset.intersection(poly)
     if intersection.geom_type == 'MultiLineString':
-        intersectionpt = (int(intersection[-1].coords[1][0]), int(intersection[-1].coords[1][1]))
-        numIntersections=0
-        pointsCrossed=[]
-        for linestring in intersection:
-            p1, p2 = linestring.coords[0], linestring.coords[1]
-            if p1 == routerpt:
-                continue
-            if ((int(p1[0]), int(p1[1]))) not in pointsCrossed:
-                pointsCrossed.append(((int(p1[0]), int(p1[1]))))
-                numIntersections+=1
-                                 
-            if ((int(p2[0]), int(p2[1]))) not in pointsCrossed:
-                pointsCrossed.append(((int(p2[0]), int(p2[1]))))
-                numIntersections+=1
-            if linestring == intersection[-1]:
-                endpoint = linestring.coords[1]
-                endpt = np.array(endpoint)
-                compare = np.array(point)
-                distance = int(np.linalg.norm(compare-endpt))
-                if distance < 5:
-                    pointsCrossed.append(((int(p2[0]), int(p2[1]))))
-                    numIntersections+=1 # ensure intersections are not the actual endpoint
-            pointsCrossed = removeClosePoints(pointsCrossed)
-            numIntersections = len(pointsCrossed)
-            # if intersectionpt not in offsetIntersections.keys():
-            #     offsetIntersections[intersectionpt] = numIntersections
+        pass
     else:
         intersectionpt = (int(intersection.coords[1][0]), int(intersection.coords[1][1]))
         numIntersections=0
@@ -311,7 +286,6 @@ for seg in polysegments:
         finalSegmentLinesDict[segval] = [seg]
     else:
         finalSegmentLinesDict[segval].append(seg)
-    
     if segval2 not in finalSegmentLinesDict:
         finalSegmentLinesDict[segval2] = [seg]
     else:
@@ -319,12 +293,11 @@ for seg in polysegments:
 
         
 # Connect segments between vertices for desired k value          
-def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt,facecolor):   
+def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt):   
     kvaluesegments=[]
     for key in finalSegmentLinesDict:
         if key <= kvalue:
             kvaluesegments = kvaluesegments + finalSegmentLinesDict[key]
-
     totalpolygons = []
     for segment in kvaluesegments:
         p1,p2 = segment[0], segment[1]
@@ -334,21 +307,30 @@ def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLine
         region = list(polygonize((line1,line2, line3)))
         poly = region[0]
         totalpolygons.append(poly)
-
     return totalpolygons      
 
-def getKRegion(kvalueinput, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt):
+# Due to the double wall effect in the polygon contour, every even k point counts as a consecutive k region
+# Except for k=0 and k=1, every "k" region desired is actually plotted as the 2k/2k+1 region to compensate
+def getKRegion(kvalueinput, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt,facecolor):
     if kvalueinput == 0:
         kvalue = 0
+    elif kvalueinput % 2 != 0:
+        kvalue = kvalueinput*2
     else:
-        kvalue = kvalueinput*2+1
-    ax=plt.gca() 
-    kregion = getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt,'red')
+        kvalue = kvalueinput*2+1   
+    kregion = getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt)
     kregionpolys = [poly for poly in kregion]
     polygon_final = cascaded_union(kregionpolys)
-    kfill = PolygonPatch(polygon_final,facecolor='#cccccc', edgecolor='None')
+    return polygon_final
+    
+    
+facecolors = ['red','yellow','blue','green']
+kvalues = max(np.array(list(pointValuesDict.values()))) // 2
+for i in range(kvalues, -1, -1):
+    print(i)
+    ax=plt.gca() 
+    kregion = getKRegion(i, coordinates, pointValuesDict, finalSegmentLinesDict, routerpt,facecolors[i])
+    kfill = PolygonPatch(kregion, facecolor=facecolors[i], edgecolor='None')
     ax.add_patch(kfill)
-    plt.show()
 
-
-getKRegion(0, coordinates, pointValuesDict, finalSegmentLinesDict, routerpt)
+plt.show()
