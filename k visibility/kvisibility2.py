@@ -114,7 +114,7 @@ def removeClosePoints(points):
     for i in range(len(points2)-1):
         p1 = np.array(points2[i])
         p2 = np.array(points2[i+1])
-        distance = int(np.linalg.norm(p2-p1))
+        distance = np.linalg.norm(p2-p1)
         if distance < 5:
             points.remove(points2[i])
     return points
@@ -209,8 +209,7 @@ def insertQ(coordinates, q):
         i+=1   
 
 
-for q in qpoints:
-    insertQ(coordinates, q)
+
 
 
 
@@ -234,14 +233,20 @@ for q in qpoints:
             # plt.plot(*rayoffset.xy, 'r', linewidth = 0.4)
 
 offsetpts = list(offsetIntersections.keys())
-offsetpts = removeClosePoints(offsetpts)
+
+# coordinates=removeClosePoints(coordinates)
+# offsetpts = removeClosePoints(offsetpts)
+# qpoints = removeClosePoints(qpoints)
+
+for q in qpoints:
+    insertQ(coordinates, q)
 for o in offsetpts:
     insertQ(coordinates, o)
 
 # Remove any duplicates/near-duplicates from new coordinates list
 coordinates = list(dict.fromkeys(coordinates))
 coordinates = removeClosePoints(coordinates)
-            
+
 def getPointValue(point, vertexIntersections, qIntersections):
     segval = None
     if point in vertexIntersections.keys():
@@ -310,12 +315,12 @@ def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLine
     return totalpolygons      
 
 # Due to the double wall effect in the polygon contour, every even k point counts as a consecutive k region
-# Except for k=0 and k=1, every "k" region desired is actually plotted as the 2k/2k+1 region to compensate
+# Except for k=0 and k=1, every "k" region desired is actually plotted as the 2k+1 region to compensate
 def getKRegion(kvalueinput, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt,facecolor):
     if kvalueinput == 0:
         kvalue = 0
-    elif kvalueinput % 2 != 0:
-        kvalue = kvalueinput*2
+    # elif kvalueinput % 2 != 0:
+    #     kvalue = kvalueinput*2
     else:
         kvalue = kvalueinput*2+1   
     kregion = getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt)
