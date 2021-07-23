@@ -17,7 +17,7 @@ content = [x.strip() for x in content]
 contour = np.squeeze(vertices2.contours[0])
 poly = Polygon(contour)
 plt.plot(*poly.exterior.xy, 'k',linewidth=2.0)
-verticesArray = vertices2.corners
+
 
 # Define plot x limits and y limits
 coordinates = list(poly.exterior.coords)
@@ -213,9 +213,8 @@ def insertQ(coordinates, q):
 for q in qpoints:
     insertQ(coordinates, q)
 
-# Remove any duplicates from new coordinates list
+# Remove any duplicates/near-duplicates from new coordinates list
 coordinates = list(dict.fromkeys(coordinates))
-
 coordinates = removeClosePoints(coordinates)
             
 def getPointValue(point, vertexIntersections, qIntersections):
@@ -265,7 +264,6 @@ for seg in polysegments:
     else:
         finalSegmentLinesDict[segval2].append(seg)
 
-
         
 # Connect segments between vertices for desired k value          
 def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt,facecolor):   
@@ -287,9 +285,8 @@ def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLine
     return totalpolygons      
 
     
-
 ax=plt.gca() 
-kregion = getKRegionVertexLines(6, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt,'red')
+kregion = getKRegionVertexLines(0, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt,'red')
 kregionpolys = [poly for poly in kregion]
 polygon_final = cascaded_union(kregionpolys)
 kfill = PolygonPatch(polygon_final,facecolor='#cccccc', edgecolor='None')
