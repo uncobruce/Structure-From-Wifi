@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 import vertices2
-from shapely.geometry import  Point, Polygon, LineString
+from shapely.geometry import  Point, Polygon, LineString, MultiLineString
 import numpy as np
 import math
 from shapely.ops import polygonize
 from descartes import PolygonPatch
 from shapely.ops import cascaded_union
-
+import random
 # Create list of points from given vertices
 with open("mapEdges.txt") as f:
     content = f.readlines() 
@@ -329,13 +329,94 @@ def getKRegion(kvalueinput, coordinates, pointValuesDict, finalSegmentLinesDict,
     return polygon_final
     
     
-facecolors = ['red','yellow','blue','green']
-kvalues = max(np.array(list(pointValuesDict.values()))) // 2
-for i in range(kvalues, -1, -1):
-    print(i)
-    ax=plt.gca() 
-    kregion = getKRegion(i, coordinates, pointValuesDict, finalSegmentLinesDict, routerpt,facecolors[i])
-    kfill = PolygonPatch(kregion, facecolor=facecolors[i], edgecolor='None')
-    ax.add_patch(kfill)
+# facecolors = ['red','yellow','blue','green']
+# kvalues = max(np.array(list(pointValuesDict.values()))) // 2
+# for i in range(kvalues, -1, -1):
+#     ax=plt.gca() 
+#     kregion = getKRegion(i, coordinates, pointValuesDict, finalSegmentLinesDict, routerpt,facecolors[i])
+#     kfill = PolygonPatch(kregion, facecolor=facecolors[i], edgecolor='None')
+#     ax.add_patch(kfill)
+# plt.show()
+# -------------------------------------------------------------------------------------------
+plt.plot(*poly.exterior.xy, 'k',linewidth=2.0)
+plt.plot(routerx,routery, 'ro')
+
+def obtainRandomTrajectory(xmax, ymax,routerPoint,poly):
+    def getStartPoint():
+        while True:
+            x = random.randrange(xmax)
+            y = random.randrange(ymax)
+            point = Point(x,y)
+            if poly.contains(point) and (not point.intersects(routerPoint)):
+                return point
+    def getOpenandClosedPositions(currentStep):
+        step = 30
+        openPositions, openPositionsDict = [], {}
+        up = Point(currentStep.x, currentStep.y+step)
+        down = Point(currentStep.x, currentStep.y-step)
+        left = Point(currentStep.x-step, currentStep.y)
+        right = Point(currentStep.x+step, currentStep.y)
+        
+        if not (up.intersects(poly.exterior) or not up.within(poly)):
+            openPositions.append(up)
+            openPositionsDict[(up.x,up.y)] = 'up'
+            
+        if not (down.intersects(poly.exterior) or not down.within(poly)):
+            openPositions.append(down)
+            openPositionsDict[(down.x, down.y)] = 'down'
+            
+        if not (left.intersects(poly.exterior) or not left.within(poly)):
+            openPositions.append(left)
+            openPositionsDict[(left.x, left.y)] = 'left'
+            
+        if not (right.intersects(poly.exterior) or not right.within(poly)):
+            openPositions.append(right)
+            openPositionsDict[(right.x, right.y)] = 'right'
+            
+        return openPositions, openPositionsDict
+        
+    startPoint = getStartPoint()
+    currentStep = startPoint
+    path = []
+    i=0
+    limit = 500
+    currentDirection = None
+    while i < limit:
+        path.append(currentStep)
+        openPositions, openPositionsDict = getOpenandClosedPositions(currentStep)
+       
+        if i != 0:          
+            for pos in openPositions:
+                if openPositionsDict[(pos.x, pos.y)] == currentDirection:
+                    currentStep = pos
+                    break
+                currentStep = random.choice(openPositions)
+            currentDirection = openPositionsDict[(currentStep.x, currentStep.y)]
+
+        else:
+            currentStep = random.choice(openPositions)
+            currentDirection = openPositionsDict[(currentStep.x, currentStep.y)]
+        i+=1
+    
+    # Remove intersection points
+    path2 = path.copy()
+    for i in range(len(path2)-1):
+        point = path2[i]
+        nextpoint = path2[i+1]
+        step = LineString([point, nextpoint])
+        if step.intersection(poly).geom_type == 'MultiLineString':
+            # print(step.intersection(poly), point, nextpoint)
+            path.remove(point)
+            
+    # Remove duplicates
+    pathnew = []
+    for point in path:
+        pathnew.append((point.x,point.y))
+    pathnew = list(dict.fromkeys(pathnew))
+    for point in pathnew:
+        plt.plot(point[0], point[1], 'bo', markersize = 3)
+
+for i in range(4):
+    obtainRandomTrajectory(xmax,ymax,routerPoint,poly)
 
 plt.show()
