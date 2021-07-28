@@ -7,11 +7,13 @@ from shapely.ops import polygonize
 from descartes import PolygonPatch
 from shapely.ops import cascaded_union
 import random
+import cv2
 # Create list of points from given vertices
 with open("mapEdges.txt") as f:
     content = f.readlines() 
 f.close()
 content = [x.strip() for x in content] 
+fig = plt.figure()
 
 # Define floor map and plot
 contour = np.squeeze(vertices2.contours[0])
@@ -329,14 +331,23 @@ def getKRegion(kvalueinput, coordinates, pointValuesDict, finalSegmentLinesDict,
     return polygon_final
     
     
-# facecolors = ['red','yellow','blue','green']
-# kvalues = max(np.array(list(pointValuesDict.values()))) // 2
-# for i in range(kvalues, -1, -1):
-#     ax=plt.gca() 
-#     kregion = getKRegion(i, coordinates, pointValuesDict, finalSegmentLinesDict, routerpt,facecolors[i])
-#     kfill = PolygonPatch(kregion, facecolor=facecolors[i], edgecolor='None')
-#     ax.add_patch(kfill)
-# plt.show()
+facecolors = ['red','yellow','blue','green']
+kvalues = max(np.array(list(pointValuesDict.values()))) // 2
+kvaluesdict={}
+for i in range(kvalues+1):
+    kvaluesdict[facecolors[i]] = i
+kvalpolys = []
+for i in range(kvalues, -1, -1):
+    ax=plt.gca() 
+    kregion = getKRegion(i, coordinates, pointValuesDict, finalSegmentLinesDict, routerpt,facecolors[i])
+    kvalpolys.append(kregion)
+    kfill = PolygonPatch(kregion, facecolor=facecolors[i], edgecolor='None')
+    ax.add_patch(kfill)
+    # ax.set_frame_on(False)
+    # ax.axes.get_xaxis().set_visible(False)
+    # ax.axes.get_yaxis().set_visible(False)
+kvalpolys.reverse()
+plt.show()
 # -------------------------------------------------------------------------------------------
 plt.plot(*poly.exterior.xy, 'k',linewidth=2.0)
 plt.plot(routerx,routery, 'ro')
@@ -350,48 +361,59 @@ def obtainRandomTrajectory(xmax, ymax,routerPoint,poly):
             if poly.contains(point) and (not point.intersects(routerPoint)):
                 return point
     def getOpenandClosedPositions(currentStep):
-        step = 30
-        openPositions, openPositionsDict = [], {}
+        step = 10
+        openPositions, openPositionsDict,closedPositions = [], {}, []
         up = Point(currentStep.x, currentStep.y+step)
         down = Point(currentStep.x, currentStep.y-step)
         left = Point(currentStep.x-step, currentStep.y)
         right = Point(currentStep.x+step, currentStep.y)
         
+        
         if not (up.intersects(poly.exterior) or not up.within(poly)):
             openPositions.append(up)
             openPositionsDict[(up.x,up.y)] = 'up'
+        else:
+            closedPositions.append(up)
             
         if not (down.intersects(poly.exterior) or not down.within(poly)):
             openPositions.append(down)
             openPositionsDict[(down.x, down.y)] = 'down'
+        else:
+            closedPositions.append(down)  
             
         if not (left.intersects(poly.exterior) or not left.within(poly)):
             openPositions.append(left)
             openPositionsDict[(left.x, left.y)] = 'left'
+        else:
+            closedPositions.append(left)
             
         if not (right.intersects(poly.exterior) or not right.within(poly)):
             openPositions.append(right)
             openPositionsDict[(right.x, right.y)] = 'right'
+        else:
+            closedPositions.append(right)
             
-        return openPositions, openPositionsDict
+        return openPositions, openPositionsDict, closedPositions
         
     startPoint = getStartPoint()
     currentStep = startPoint
     path = []
     i=0
-    limit = 500
+    limit = 5000
     currentDirection = None
     while i < limit:
         path.append(currentStep)
-        openPositions, openPositionsDict = getOpenandClosedPositions(currentStep)
+        openPositions, openPositionsDict,closedPositions = getOpenandClosedPositions(currentStep)
        
         if i != 0:          
             for pos in openPositions:
-                if openPositionsDict[(pos.x, pos.y)] == currentDirection:
+                if openPositionsDict[(pos.x, pos.y)] == currentDirection and pos not in closedPositions:
                     currentStep = pos
                     break
                 currentStep = random.choice(openPositions)
             currentDirection = openPositionsDict[(currentStep.x, currentStep.y)]
+            if i % 300 == 0:
+                currentDirection = random.choice(list(openPositionsDict.values()))
 
         else:
             currentStep = random.choice(openPositions)
@@ -406,6 +428,7 @@ def obtainRandomTrajectory(xmax, ymax,routerPoint,poly):
         step = LineString([point, nextpoint])
         if step.intersection(poly).geom_type == 'MultiLineString':
             # print(step.intersection(poly), point, nextpoint)
+            path.remove(nextpoint)
             path.remove(point)
             
     # Remove duplicates
@@ -414,9 +437,32 @@ def obtainRandomTrajectory(xmax, ymax,routerPoint,poly):
         pathnew.append((point.x,point.y))
     pathnew = list(dict.fromkeys(pathnew))
     for point in pathnew:
-        plt.plot(point[0], point[1], 'bo', markersize = 3)
+        plt.plot(point[0], point[1], 'bo', markersize = 2)
+    
+    return pathnew
 
-for i in range(4):
-    obtainRandomTrajectory(xmax,ymax,routerPoint,poly)
-
+trajcoords = obtainRandomTrajectory(xmax,ymax,routerPoint,poly)
 plt.show()
+
+
+def getTrajectoryKValueDictionary(trajcoords, kvaluesdict, kvalpolys):
+    trajectoryKValueDictionary = {}
+
+    
+    for coord in trajcoords:
+        for i in range(len(kvalpolys)):
+            coordPoint = Point(coord)
+            if coordPoint.within(kvalpolys[i]):
+                if coord not in trajectoryKValueDictionary:
+                    trajectoryKValueDictionary[coord] = i
+                
+                
+        
+    return trajectoryKValueDictionary
+
+# cv2.imshow('polygon', kvisimg)
+# cv2.waitKey()
+# cv2.destroyAllWindows()
+
+trajectoryKValueDictionary = getTrajectoryKValueDictionary(trajcoords, kvaluesdict, kvalpolys)
+# trajectoryKValueDictionary2 = getTrajectoryKValueDictionary(trajcoords, kvaluesdict, kvalpolys)
