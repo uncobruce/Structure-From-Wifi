@@ -30,6 +30,10 @@ ymin, ymax = min(ycoords), max(ycoords)
 plt.xlim(xmin - 100, xmax + 100)
 plt.ylim(ymin - 100, ymax+100)
 
+# Define bounding box poly
+bbox = Polygon([(xmin-100, ymin-100), (xmax+100, ymin-100), (xmax+100, ymax+100), (xmin-100, ymax+100)])
+plt.plot(*bbox.exterior.xy, 'k')
+
 # Obtain a router point at a randomly placed location
 routerPoint = poly.representative_point()
 routerx, routery = routerPoint.x, routerPoint.y-200
@@ -192,6 +196,8 @@ for coord in coordinates:
 qpoints = list(qIntersections.keys())
 
 
+
+bboxcoords = [(xmin-100, ymin-100), (xmax+100, ymin-100), (xmax+100, ymax+100), (xmin-100, ymax+100)]
 # Insert q points into coordinates list
 def insertQ(coordinates, q):
     i=0
@@ -214,7 +220,7 @@ def insertQ(coordinates, q):
 
 
 
-
+    
 offsetIntersections={}
 # Plot offset rays for every qpoint to ensure points behind vertices are seen for k0 regions
 for q in qpoints:
@@ -233,7 +239,22 @@ for q in qpoints:
         if intersectionpt not in offsetIntersections.keys():
             offsetIntersections[intersectionpt] = numIntersections
             # plt.plot(*rayoffset.xy, 'r', linewidth = 0.4)
-
+for q in qpoints:
+    angle = math.atan(q[1]/q[0])
+    angleoffset = 0.2
+    xoffset = (q[0]*math.cos(angleoffset)) - (q[1]*math.sin(angleoffset))
+    yoffset = (q[0]*math.sin(angleoffset)) + (q[1]*math.cos(angleoffset))
+    extendedoffsetpt = extendRay(routerPoint, (xoffset,yoffset))
+    rayoffset = LineString([routerpt, extendedoffsetpt])
+    intersection = rayoffset.intersection(poly)
+    if intersection.geom_type == 'MultiLineString':
+        pass
+    else:
+        intersectionpt = (int(intersection.coords[1][0]), int(intersection.coords[1][1]))
+        numIntersections=0
+        if intersectionpt not in offsetIntersections.keys():
+            offsetIntersections[intersectionpt] = numIntersections
+            # plt.plot(*rayoffset.xy, 'r', linewidth = 0.4)
 offsetpts = list(offsetIntersections.keys())
 
 # coordinates=removeClosePoints(coordinates)
@@ -260,7 +281,33 @@ def getPointValue(point, vertexIntersections, qIntersections):
     elif point in offsetIntersections.keys():
         segval = offsetIntersections[point]
         return segval
+  
     return segval
+
+bboxintersections = {}
+for pt in coordinates:
+    extendedpoint = extendRay(routerPoint, pt)
+    extendedray = LineString([routerPoint, extendedpoint])
+    numIntersectionstoPoly = getPointValue(pt, vertexIntersections, qIntersections)
+    bboxnumIntersections = numIntersectionstoPoly+1
+    if extendedray.intersects(bbox):
+        intersection = extendedray.intersection(bbox)
+        intersectionpt = intersection.coords[1]
+        bboxintersections[intersectionpt] = bboxnumIntersections
+        
+bboxintersectionpts = list(bboxintersections.keys())
+
+
+# bboxcoords = list(dict.fromkeys(bboxcoords))
+# bboxcoords =  removeClosePoints(bboxcoords)
+pointValuesDict={}
+for coord in coordinates:
+    pointval = getPointValue(coord, vertexIntersections, qIntersections)
+    if coord not in pointValuesDict:
+        pointValuesDict[coord] = pointval
+for pt in bboxintersectionpts:
+    insertQ(bboxcoords, pt)
+
 
 def makeLinesFromPointsList(pointslist):
         lineslist=[]
@@ -278,13 +325,17 @@ def makeLinesFromPointsList(pointslist):
         return lineslist
 
 
-pointValuesDict={}
-for coord in coordinates:
-    pointval = getPointValue(coord, vertexIntersections, qIntersections)
-    if coord not in pointValuesDict:
-        pointValuesDict[coord] = pointval
+
+        
+bboxpointvaluesdict={}
+for coord in bboxcoords:
+    if coord in bboxintersections:
+        pointval = bboxintersections[coord]+1
+    bboxpointvaluesdict[coord] = pointval
         
 polysegments = makeLinesFromPointsList(coordinates)
+bboxsegments = makeLinesFromPointsList(bboxcoords)
+
 finalSegmentLinesDict={}     
 for seg in polysegments:
     segval = pointValuesDict[seg[0]]
@@ -298,6 +349,16 @@ for seg in polysegments:
     else:
         finalSegmentLinesDict[segval2].append(seg)
 
+bboxsegmentlinesdict = {}
+for seg in bboxsegments:
+    segval = bboxpointvaluesdict[seg[0]]
+    segval2 = bboxpointvaluesdict[seg[1]]
+    
+    if segval not in bboxsegmentlinesdict:
+        bboxsegmentlinesdict[segval] = [seg]
+    else:
+        bboxsegmentlinesdict[segval].append(seg)
+
         
 # Connect segments between vertices for desired k value          
 def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLinesDict,routerpt):   
@@ -305,6 +366,22 @@ def getKRegionVertexLines(kvalue, coordinates, pointValuesDict, finalSegmentLine
     for key in finalSegmentLinesDict:
         if key <= kvalue:
             kvaluesegments = kvaluesegments + finalSegmentLinesDict[key]
+    totalpolygons = []
+    for segment in kvaluesegments:
+        p1,p2 = segment[0], segment[1]
+        line1 = (p1,p2)
+        line2 = (p1, routerpt)
+        line3 = (p2, routerpt)
+        region = list(polygonize((line1,line2, line3)))
+        poly = region[0]
+        totalpolygons.append(poly)
+    return totalpolygons      
+
+def getBBoxRegionVertexLines(kvalue, bboxcoords, bboxpointvaluesdict, bboxsegmentlinesdict, routerpt):
+    kvaluesegments=[]
+    for key in bboxsegmentlinesdict:
+        if key <= kvalue:
+            kvaluesegments = kvaluesegments + bboxsegmentlinesdict[key]
     totalpolygons = []
     for segment in kvaluesegments:
         p1,p2 = segment[0], segment[1]
@@ -329,24 +406,42 @@ def getKRegion(kvalueinput, coordinates, pointValuesDict, finalSegmentLinesDict,
     kregionpolys = [poly for poly in kregion]
     polygon_final = cascaded_union(kregionpolys)
     return polygon_final
-    
-    
+
+def getBBoxKRegion(kvalueinput, bboxcoords, bboxpointvaluesdict, bboxsegmentlinesdict, routerpt):
+    if kvalueinput == 0:
+        kvalue = 0
+    # elif kvalueinput % 2 != 0:
+    #     kvalue = kvalueinput*2
+    else:
+        kvalue = kvalueinput*2
+    kregion = getBBoxRegionVertexLines(kvalue, bboxcoords, bboxpointvaluesdict, bboxsegmentlinesdict, routerpt)
+    kregionpolys = [poly for poly in kregion]
+    polygon_final = cascaded_union(kregionpolys)
+    return polygon_final
+
 facecolors = ['red','yellow','blue','green']
 kvalues = max(np.array(list(pointValuesDict.values()))) // 2
 kvaluesdict={}
-for i in range(kvalues+1):
+for i in range(kvalues, -1, -1):
     kvaluesdict[facecolors[i]] = i
+
+
+ax=plt.gca() 
+for i in range(kvalues, 0, -1):
+    kregion = getBBoxKRegion(i, bboxcoords, bboxpointvaluesdict, bboxsegmentlinesdict, routerpt)
+    kfill = PolygonPatch(kregion, facecolor=facecolors[i], edgecolor='None')
+    ax.add_patch(kfill)
+
 kvalpolys = []
 for i in range(kvalues, -1, -1):
-    ax=plt.gca() 
     kregion = getKRegion(i, coordinates, pointValuesDict, finalSegmentLinesDict, routerpt,facecolors[i])
     kvalpolys.append(kregion)
     kfill = PolygonPatch(kregion, facecolor=facecolors[i], edgecolor='None')
     ax.add_patch(kfill)
-    # ax.set_frame_on(False)
-    # ax.axes.get_xaxis().set_visible(False)
-    # ax.axes.get_yaxis().set_visible(False)
 kvalpolys.reverse()
+
+
+
 plt.show()
 # -------------------------------------------------------------------------------------------
 plt.plot(*poly.exterior.xy, 'k',linewidth=2.0)
@@ -361,7 +456,7 @@ def obtainRandomTrajectory(xmax, ymax,routerPoint,poly):
             if poly.contains(point) and (not point.intersects(routerPoint)):
                 return point
     def getOpenandClosedPositions(currentStep):
-        step = 10
+        step = 30
         openPositions, openPositionsDict,closedPositions = [], {}, []
         up = Point(currentStep.x, currentStep.y+step)
         down = Point(currentStep.x, currentStep.y-step)
@@ -370,24 +465,28 @@ def obtainRandomTrajectory(xmax, ymax,routerPoint,poly):
         
         
         if not (up.intersects(poly.exterior) or not up.within(poly)):
+            up = Point(currentStep.x, currentStep.y+(step/10))
             openPositions.append(up)
             openPositionsDict[(up.x,up.y)] = 'up'
         else:
             closedPositions.append(up)
             
         if not (down.intersects(poly.exterior) or not down.within(poly)):
+            down = Point(currentStep.x, currentStep.y-(step/10))
             openPositions.append(down)
             openPositionsDict[(down.x, down.y)] = 'down'
         else:
             closedPositions.append(down)  
             
         if not (left.intersects(poly.exterior) or not left.within(poly)):
+            left = Point(currentStep.x-(step/10), currentStep.y)
             openPositions.append(left)
             openPositionsDict[(left.x, left.y)] = 'left'
         else:
             closedPositions.append(left)
             
         if not (right.intersects(poly.exterior) or not right.within(poly)):
+            right = Point(currentStep.x+(step/10), currentStep.y)
             openPositions.append(right)
             openPositionsDict[(right.x, right.y)] = 'right'
         else:
@@ -404,12 +503,14 @@ def obtainRandomTrajectory(xmax, ymax,routerPoint,poly):
     while i < limit:
         path.append(currentStep)
         openPositions, openPositionsDict,closedPositions = getOpenandClosedPositions(currentStep)
-       
+        closedPositions.append(currentStep)
+        
         if i != 0:          
             for pos in openPositions:
                 if openPositionsDict[(pos.x, pos.y)] == currentDirection and pos not in closedPositions:
                     currentStep = pos
                     break
+                
                 currentStep = random.choice(openPositions)
             currentDirection = openPositionsDict[(currentStep.x, currentStep.y)]
             if i % 300 == 0:
@@ -428,7 +529,8 @@ def obtainRandomTrajectory(xmax, ymax,routerPoint,poly):
         step = LineString([point, nextpoint])
         if step.intersection(poly).geom_type == 'MultiLineString':
             # print(step.intersection(poly), point, nextpoint)
-            path.remove(nextpoint)
+            if nextpoint in path:
+                path.remove(nextpoint)
             path.remove(point)
             
     # Remove duplicates
@@ -438,7 +540,6 @@ def obtainRandomTrajectory(xmax, ymax,routerPoint,poly):
     pathnew = list(dict.fromkeys(pathnew))
     for point in pathnew:
         plt.plot(point[0], point[1], 'bo', markersize = 2)
-    
     return pathnew
 
 trajcoords = obtainRandomTrajectory(xmax,ymax,routerPoint,poly)
@@ -455,14 +556,9 @@ def getTrajectoryKValueDictionary(trajcoords, kvaluesdict, kvalpolys):
             if coordPoint.within(kvalpolys[i]):
                 if coord not in trajectoryKValueDictionary:
                     trajectoryKValueDictionary[coord] = i
-                
-                
-        
     return trajectoryKValueDictionary
 
-# cv2.imshow('polygon', kvisimg)
-# cv2.waitKey()
-# cv2.destroyAllWindows()
+
 
 trajectoryKValueDictionary = getTrajectoryKValueDictionary(trajcoords, kvaluesdict, kvalpolys)
 # trajectoryKValueDictionary2 = getTrajectoryKValueDictionary(trajcoords, kvaluesdict, kvalpolys)
