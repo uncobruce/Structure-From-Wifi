@@ -8,7 +8,7 @@ import kvisibility_floorplan
 import random_trajectory
 
 max_k0_visble_distance = 2
-max_kval_visble_distance = 3
+max_kval_visble_distance = 4
 def imageToGrid(image, desired_height, desired_width, data):   
     # Return list of grid coordinates that match image of map 
     # -----------------------------------------------------------------------
@@ -52,7 +52,7 @@ def plotGrid(data, desired_height, desired_width):
     ax.set_yticks(np.arange(desired_width+1)-0.5, minor=True)
     ax.grid(which="minor")
     ax.tick_params(which="minor", size=0)    
-    plt.axis('off')
+    # plt.axis('off')
     plt.show()
     
 def initializeOccupancyGrid(desired_height, desired_width):
@@ -193,7 +193,10 @@ def getUnknownCoordinates(k_val_dictionary, currentkval):
         if k_val_dictionary[coord] == None:
             unknowncoordinates.append(coord)
     return unknowncoordinates
-
+def collinear(x1, y1, x2, y2, x3, y3):
+    check = x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)
+    if check == 0: return True
+    return False
 def updateGridMap(k_val_dictionary, currentkval, kvals, max_kval_visble_distance, testmap, trajectoryCoordinates):
     # unknowncoordinates = getUnknownCoordinates(k_val_dictionary, currentkval)
     for k in kvals:
@@ -236,6 +239,10 @@ def updateGridMap(k_val_dictionary, currentkval, kvals, max_kval_visble_distance
     for coord in trajectoryCoordinates:
         x, y = coord[0], coord[1]
         testmap[y][x] = 0
+    for i in range(len(testmap)):
+        for j in range(len(testmap[0])):
+            if testmap[i][j] > 0.5:
+                testmap[i][j] = testmap[i][j]*1.25
     return testmap
 testmap = updateGridMap(k_val_dictionary, 0, k0vals, max_kval_visble_distance, testmap, trajectoryCoordinates)
 testmap = updateGridMap(k_val_dictionary, 1, k1vals, max_kval_visble_distance, testmap, trajectoryCoordinates)
@@ -248,7 +255,6 @@ plotGrid(testmap, desired_height+10, desired_width+10)
 
 for i in range(len(testmap)):
     for j in range(len(testmap[0])):
-        if testmap[i][j] > 0.5:
-            testmap[i][j] = testmap[i][j]*1.25
-            
+        if testmap[i][j] < 1:
+            testmap[i][j] = 0
 plotGrid(testmap, desired_height+10, desired_width+10)
