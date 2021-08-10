@@ -8,7 +8,8 @@ import kvisibility_floorplan
 import random_trajectory
 
 max_k0_visble_distance = 2
-max_kval_visble_distance = 4
+max_kval_visble_distance = 3
+
 def imageToGrid(image, desired_height, desired_width, data):   
     # Return list of grid coordinates that match image of map 
     # -----------------------------------------------------------------------
@@ -97,7 +98,7 @@ maxcoordx = kvisibility_floorplan.xmax
 maxcoordy = kvisibility_floorplan.ymax
 
 # Image of map to be recreated
-img1 = cv2.imread("testroom.png")
+img1 = random_trajectory.img1
 
 # Create gridmap showing full map for comparison
 floormap = initializeOccupancyGrid(desired_height+10, desired_width+10)
@@ -131,130 +132,179 @@ k3vals = getkValCoordinates(trajectoryKValueDictionary, 3)
 k4vals = getkValCoordinates(trajectoryKValueDictionary, 4)
 k5vals = getkValCoordinates(trajectoryKValueDictionary, 5)
 
+# Get router point
+routerpt = (routerx,routery)
 
-# --------------------------------------------------------------------
-# TODO fix k0 polygon fill
-# # Sort k0 vals to be able to draw outline 
-# k0vals = sorted(k0vals, key=lambda k: (k[1], k[0])) #sort k0 vals by y coordinate
+# Get map bounds
+gridmapwidth, gridmapheight = random_trajectory.gridmapwidth,random_trajectory.gridmapheight
 
-# # Fill k0 polygon 
-# polypoints = []
-# poly = Polygon(k0vals)
-# for i in range(len(testmap)):
-#     for j in range(len(testmap)):
-#         point = Point(i,j)
-#         if point.within(poly):
-#             testmap[j][i] = 0
-#             polypoints.append((i,j))
-        
-# # Draw outline of k0 polygon
-# i=0
-# linepoints=[]
-# for k01 in k0vals:
-#     point0 = k01
-#     if i == len(k0vals)-1:
-#         point1 = k0vals[0]
-#     else:
-#         point1 = k0vals[i+1]
-#     i+=1
-#     x0,y0 = point0[0], point0[1]
-#     x1,y1 = point1[0], point1[1]
-#     k0_line = list(bresenham(x0, y0, x1, y1))
-#     for pt in k0_line:
-#         ptx,pty = pt[0],pt[1]
-#         testmap[pty][ptx] = 0
-#         linepoints.append(pt)     
-        
-# # Add new k0 values to full k values list w/ corresp. k val       
-# new_k0vals = linepoints + polypoints
-# for k0 in new_k0vals:
-#     if k0 not in k0vals:
-#         trajectoryCoordinates.append(k0)
-# k0vals = new_k0vals
+# Get grid bounds
+kvisgridmapwidth,kvisgridmapheight = random_trajectory.kvisgridmapwidth, random_trajectory.kvisgridmapheight
+
+# Get map paths
+paths = random_trajectory.insidemappaths
 #-------------------------------------------------------------------
 # Obtain dictionary containing every grid cell's k value
 k_val_dictionary = getKValueDictionary(trajectoryKValueDictionary)
 k_val_dictionary[(routerx,routery)] = 0
-# for k0 in k0vals:
-#     for i in range(len(testmap)-1): # i is grid row
-#         for j in range(len(testmap[0])-1): # j is grid col in that row
-#             y, x = i, j
-#             current_cell_value = testmap[y][x]
-#             point1 = np.array((x, y))
-#             point2 = np.array(k0)
-#             distanceToKValue = int(np.linalg.norm(point2-point1))
-#             if k0 == k0vals[0]:
-#                 print(distanceToKValue)
-#                 break
-def getUnknownCoordinates(k_val_dictionary, currentkval):
-    # return a list of all coords whose kvals are unknown
-    unknowncoordinates=[]
-    for coord in k_val_dictionary:
-        if k_val_dictionary[coord] == None:
-            unknowncoordinates.append(coord)
-    return unknowncoordinates
-def collinear(x1, y1, x2, y2, x3, y3):
-    check = x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)
-    if check == 0: return True
+
+def getDirectionToRouterPoint(coordinate, routerpt):
+    # return directions dict from coordinate --> routerpt 
+    directionstorouter=[]
+    coordx, coordy = coordinate[0], coordinate[1]
+    routerx, routery = routerpt[0], routerpt[1]
+    if routerx - coordx < 0:
+        directionstorouter.append('left')
+    elif routerx - coordx > 0:
+        directionstorouter.append('right')
+            
+    if routery - coordy < 0:
+        directionstorouter.append('down')
+    elif routery - coordy > 0:
+        directionstorouter.append('up')
+    return directionstorouter
+
+
+
+def getDirectionToPoint(coord1, coord2):
+    # return directions dict from coord1 --> coord2
+    # what direction coord2 is relative to coord1
+    x1, y1 = coord1[0], coord1[1]
+    x2, y2 = coord2[0], coord2[1]
+    diff1, diff2 = 0, 0
+    directions = []
+    if x1 - x2 < 0:
+        directions.append('right')
+        diff1 = x1-x2
+    elif x1-x2 > 0:
+        directions.append('left')
+        diff1 = x1-x2
+    if y1 - y2 < 0:
+        directions.append('up')
+        diff2 = y1-y2
+    elif y1 - y2 > 0:
+        directions.append('down')
+        diff2 = y1-y2
+    # if diff2 > diff1 and len(directions) > 1:
+    #     directions.remove(directions[0])
+    # elif diff2 < diff1 and len(directions) > 1:
+    #     directions.remove(directions[1])
+    return directions
+
+
+
+def validPointToPrevKVal(directionstoRouter, directionstoPoint):
+    if len(directionstoRouter) == 1: 
+        if 'left' in directionstoRouter:
+            if 'left' in directionstoPoint:
+                return True
+        elif 'right' in directionstoRouter:
+            if 'right' in directionstoPoint:
+                return True
+        
+        if 'down' in directionstoRouter:
+            if 'down' in directionstoPoint:
+                return True
+        elif 'up' in directionstoRouter:
+            if 'up' in directionstoPoint:
+                return True
+    elif len(directionstoRouter) > 1:
+        if directionstoRouter == ['left', 'down'] or directionstoRouter == ['down','left']:
+            if 'left' in directionstoPoint or 'down' in directionstoPoint:
+                return True
+        if directionstoRouter == ['left', 'up'] or directionstoRouter == ['up','left']:
+            if 'left' in directionstoPoint or 'up' in directionstoPoint:
+                return True
+        if directionstoRouter == ['right', 'down'] or directionstoRouter == ['down','right']:
+            if 'right' in directionstoPoint or 'down' in directionstoPoint:
+                return True
+        if directionstoRouter == ['right', 'up'] or directionstoRouter == ['up','right']:
+            if 'right' in directionstoPoint or 'up' in directionstoPoint:
+                return True
     return False
-def updateGridMap(k_val_dictionary, currentkval, kvals, max_kval_visble_distance, testmap, trajectoryCoordinates):
-    # unknowncoordinates = getUnknownCoordinates(k_val_dictionary, currentkval)
-    for k in kvals:
-        for i in range(len(testmap)-1): # i is grid row
-            for j in range(len(testmap[0])-1): # j is grid col in that row
-                y, x = i, j
-                cellkvalue = k_val_dictionary[(x,y)]
-                point1 = np.array((x,y))
-                point2 = np.array(k)
-                distanceToKValue = int(np.linalg.norm(point2-point1))
-                # if currentkval == 1:
-                #     print(cellkvalue == currentkval-1, cellkvalue, currentkval)
-                if distanceToKValue == 0: continue
-                if distanceToKValue == 1: # high likelihood of being same kval (or if same occurs for k+1 val, then wall)                    
-                    if cellkvalue == None or cellkvalue != (currentkval+1) or cellkvalue != (currentkval-1) :
-                        # k_val_dictionary[(x,y)] = currentkval # set as same kval
-                        testmap[y][x] = 0
-                        
-                    if cellkvalue == (currentkval-1) or cellkvalue == (currentkval+1):
-                        # k_val_dictionary[(x,y)] = currentkval # very close to two consecutive kvals: set as a wall except if traj passing through
-                        testmap[y][x] = 1
-                        k_val_dictionary[(x,y)] = -1
-                        # TODO only make wall if row/col are completely untraversed
+
+def checkNeighbouringCells(k, currentkval, routerpt, testmap, max_kval_visble_distance, k_val_dictionary):
+    directionstoRouter = getDirectionToRouterPoint(k, routerpt)
+    for i in range(len(testmap)-1): # i is grid row
+        for j in range(len(testmap[0])-1): # j is grid col in that row
+            y, x = i, j
+            directionstoPoint = getDirectionToPoint(k, (x,y))
+            cellkvalue = k_val_dictionary[(x,y)]
+            point1 = np.array((x,y))
+            point2 = np.array(k)
+            distanceToKValue = int(np.linalg.norm(point2-point1))
+            if distanceToKValue == 0: continue
+            elif distanceToKValue > max_kval_visble_distance: continue
+            else:
+                current_cell_value = testmap[y][x]
+                current_cell_kvalue = k_val_dictionary[(x,y)]
+                same_kval_factor = 1 / distanceToKValue 
+                current_cell_value = testmap[y][x]
+                P_same_kval = current_cell_value * (1 - same_kval_factor)
+                P_occ = (1 - (current_cell_value * (1 - same_kval_factor)))
+                directionstoPoint = getDirectionToPoint(k, (x,y))
+                if currentkval == 0 or current_cell_kvalue == None:
+                    testmap[y][x] = P_same_kval+ .2
+                    k_val_dictionary[(x,y)] = currentkval
+                    return testmap
+                elif current_cell_kvalue == current_cell_kvalue-1:
+                   if validPointToPrevKVal(directionstoRouter, directionstoPoint):
+                       testmap[y][x] = P_occ + .2
+                       k_val_dictionary[(x,y)] = currentkval
+                       return testmap
+    return testmap
                     
-                else:
-                    if distanceToKValue > max_kval_visble_distance: 
-                        continue # out of range: can't say anything about cell kvalue
-                    # between 0 and max visible distance: likelihood decreases w/increasing distance
-                    same_kval_factor = 1 / distanceToKValue # likelihood of being same kval inversely prop. to distance
-                    current_cell_value = testmap[y][x]
-                    P_same_kval = current_cell_value * (1 - same_kval_factor)
-                    P_occ = (1 - (current_cell_value * (1 - same_kval_factor)))
-                    if  k_val_dictionary[(x,y)] == None or k_val_dictionary[(x,y)] != currentkval+1 or k_val_dictionary[(x,y)] != currentkval-1:
-                        testmap[y][x] = P_same_kval+.1
-                    if k_val_dictionary[(x,y)] == currentkval+1 or k_val_dictionary[(x,y)] == currentkval-1:
-                        # k_val_dictionary[(x,y)] = currentkval # set as wall if overlapping with a k-1 or k+1 region
-                        testmap[y][x] = P_occ+.2
-                        k_val_dictionary[(x,y)] = -1
-                k_val_dictionary[(x,y)] = currentkval
-    for coord in trajectoryCoordinates:
-        x, y = coord[0], coord[1]
-        testmap[y][x] = 0
+def updateGridMap(k_val_dictionary, currentkval, kvals, max_kval_visble_distance, testmap, trajectoryCoordinates, routerpt):
+    for k in kvals:
+        testmap = checkNeighbouringCells(k, currentkval, routerpt, testmap, max_kval_visble_distance, k_val_dictionary)
     for i in range(len(testmap)):
         for j in range(len(testmap[0])):
-            if testmap[i][j] > 0.5:
-                testmap[i][j] = testmap[i][j]*1.25
+            testmap[i][j] = testmap[i][j]*1.15
     return testmap
-testmap = updateGridMap(k_val_dictionary, 0, k0vals, max_kval_visble_distance, testmap, trajectoryCoordinates)
-testmap = updateGridMap(k_val_dictionary, 1, k1vals, max_kval_visble_distance, testmap, trajectoryCoordinates)
-testmap = updateGridMap(k_val_dictionary, 2, k2vals, max_kval_visble_distance, testmap, trajectoryCoordinates)
-testmap = updateGridMap(k_val_dictionary, 3, k3vals, max_kval_visble_distance, testmap, trajectoryCoordinates)
-testmap = updateGridMap(k_val_dictionary, 4, k4vals, max_kval_visble_distance, testmap, trajectoryCoordinates)
-testmap = updateGridMap(k_val_dictionary, 5, k5vals, max_kval_visble_distance, testmap, trajectoryCoordinates)
+       
+
+
+testmap = updateGridMap(k_val_dictionary, 0, k0vals, max_kval_visble_distance, testmap, trajectoryCoordinates, routerpt)
+testmap = updateGridMap(k_val_dictionary, 1, k1vals, max_kval_visble_distance, testmap, trajectoryCoordinates,  routerpt)
+testmap = updateGridMap(k_val_dictionary, 2, k2vals, max_kval_visble_distance, testmap, trajectoryCoordinates, routerpt)
+testmap = updateGridMap(k_val_dictionary, 3, k3vals, max_kval_visble_distance, testmap, trajectoryCoordinates,  routerpt)
+testmap = updateGridMap(k_val_dictionary, 4, k4vals, max_kval_visble_distance, testmap, trajectoryCoordinates,  routerpt)
+testmap = updateGridMap(k_val_dictionary, 5, k5vals, max_kval_visble_distance, testmap, trajectoryCoordinates, routerpt)
+
+plotGrid(testmap, desired_height+10, desired_width+10)
+# # Keep identified wall cells
+for i in range(len(testmap)-1):
+    for j in range(len(testmap[0])-1):
+        if testmap[i][j] < 1:
+            testmap[i][j] = 0
+
+# Remove all wall cells that are outside the bounds of the map
+outOfBoundsLength = (kvisgridmapwidth-gridmapwidth)//2
+
+# Four out of bounds area to clean up
+lowerBoundWidth, upperBoundWidth = kvisgridmapwidth, kvisgridmapwidth
+lowerBoundminHeight, lowerBoundmaxHeight = 0, outOfBoundsLength
+upperBoundminHeight, upperBoundmaxHeight = gridmapheight+outOfBoundsLength, kvisgridmapheight
+
+leftBoundHeight, rightBoundHeight = kvisgridmapheight, kvisgridmapheight
+leftBoundminWidth, leftBoundmaxWidth = 0, outOfBoundsLength
+rightBoundminWidth, rightBoundmaxWidth = gridmapwidth+outOfBoundsLength, kvisgridmapwidth
 
 plotGrid(testmap, desired_height+10, desired_width+10)
 
-for i in range(len(testmap)):
-    for j in range(len(testmap[0])):
-        if testmap[i][j] < 1:
-            testmap[i][j] = 0
+# Cleaning up out-of-bounds areas
+for i in range(lowerBoundminHeight, lowerBoundmaxHeight):
+    for j in range(lowerBoundWidth):
+        testmap[i][j] = 0
+for i in range(upperBoundminHeight+1, upperBoundmaxHeight):
+    for j in range(upperBoundWidth):
+        testmap[i][j] = 0
+for i in range(leftBoundHeight):
+    for j in range(leftBoundminWidth, leftBoundmaxWidth):
+        testmap[i][j] = 0        
+for i in range(rightBoundHeight):
+    for j in range(rightBoundminWidth+1, rightBoundmaxWidth):
+        testmap[i][j] = 0        
+
+
 plotGrid(testmap, desired_height+10, desired_width+10)
