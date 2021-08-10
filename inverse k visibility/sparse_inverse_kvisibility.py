@@ -53,7 +53,7 @@ def plotGrid(data, desired_height, desired_width):
     ax.set_yticks(np.arange(desired_width+1)-0.5, minor=True)
     ax.grid(which="minor")
     ax.tick_params(which="minor", size=0)    
-    # plt.axis('off')
+    plt.axis('off')
     plt.show()
     
 def initializeOccupancyGrid(desired_height, desired_width):
@@ -185,10 +185,7 @@ def getDirectionToPoint(coord1, coord2):
     elif y1 - y2 > 0:
         directions.append('down')
         diff2 = y1-y2
-    # if diff2 > diff1 and len(directions) > 1:
-    #     directions.remove(directions[0])
-    # elif diff2 < diff1 and len(directions) > 1:
-    #     directions.remove(directions[1])
+
     return directions
 
 
@@ -244,7 +241,7 @@ def checkNeighbouringCells(k, currentkval, routerpt, testmap, max_kval_visble_di
                 P_occ = (1 - (current_cell_value * (1 - same_kval_factor)))
                 directionstoPoint = getDirectionToPoint(k, (x,y))
                 if currentkval == 0 or current_cell_kvalue == None:
-                    testmap[y][x] = P_same_kval+ .2
+                    testmap[y][x] = P_same_kval + .2
                     k_val_dictionary[(x,y)] = currentkval
                     return testmap
                 elif current_cell_kvalue == current_cell_kvalue-1:
@@ -262,7 +259,6 @@ def updateGridMap(k_val_dictionary, currentkval, kvals, max_kval_visble_distance
             testmap[i][j] = testmap[i][j]*1.15
     return testmap
        
-
 
 testmap = updateGridMap(k_val_dictionary, 0, k0vals, max_kval_visble_distance, testmap, trajectoryCoordinates, routerpt)
 testmap = updateGridMap(k_val_dictionary, 1, k1vals, max_kval_visble_distance, testmap, trajectoryCoordinates,  routerpt)
@@ -308,3 +304,5 @@ for i in range(rightBoundHeight):
 
 
 plotGrid(testmap, desired_height+10, desired_width+10)
+
+
