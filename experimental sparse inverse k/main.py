@@ -27,5 +27,5 @@ k_val_dictionary = testmap.getKValueDictionary(coordsandkvals)
 routerpt = coords[0]
 testmap.updateGridMap(coords, routerpt, k_val_dictionary)
 
-
+# testing testing
 
