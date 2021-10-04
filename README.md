@@ -1,5 +1,5 @@
 # Structure from WiFi (SfM)
-A novel algorithm for geometrically mapping an environment using WiFi. This is a work in progress. 
+A novel method for geometrically mapping an environment using WiFi. This is a work in progress. 
 
 ## Organization
 * k_visibility: contains programs for implementing the k-visibility algorithm.
