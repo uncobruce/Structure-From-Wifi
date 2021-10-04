@@ -7,6 +7,6 @@ A novel algorithm for geometrically mapping an environment using WiFi. This is a
    * `k_visibility_floorplan.py`: Implementing k-visibility algorithm, but for floorplans that tend to have a "double wall" effect. Floorplans were taken from the [HouseExpo](https://github.com/TeaganLi/HouseExpo) indoor floorplan dataset.
    * `vertices2.py`: needed for k_visibility_floorplan.py. Identifies the vertices of a given floorplan image as well as the contour coordinates of the environment.
    
-* inverse_k_visibility: novel algorithm which is used to obtain a map of the environment. This was is tested by simulation and experimentally.
+* inverse_k_visibility: novel algorithm which is used to obtain a map of the environment. This is tested by simulation and experimentally.
   * full_inverse: solves the problem when given a full k-visibility colour-map to obtain the 2D map. 
   * sparse_inverse: solves the problem when given sparse k-value inputs to obtain a partial map. 
