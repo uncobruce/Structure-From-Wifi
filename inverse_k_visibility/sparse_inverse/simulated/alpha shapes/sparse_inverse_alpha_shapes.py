@@ -6,7 +6,7 @@ import math
 from bresenham import bresenham
 import kvisibility_floorplan
 import random_trajectory
-
+from shapely.ops import polygonize
 def imageToGrid(image, desired_height, desired_width, data):   
     # Return list of grid coordinates that match image of map 
     # -----------------------------------------------------------------------
@@ -132,3 +132,15 @@ k5vals = getkValCoordinates(trajectoryKValueDictionary, 5)
 
 # Get router point
 routerpt = (routerx,routery)
+
+# Cluster coordinates within each k value list
+def subClusterCoordinates(kvaluelist):
+    pass
+            
+
+
+# Create alpha shapes of each cluster
+
+# Plot
+
+# Apply probability dist to each cluster
