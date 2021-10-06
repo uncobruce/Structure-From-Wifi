@@ -172,8 +172,11 @@ while i < len(trajectoryCoordinates):
 
 for segmentlist in trajectorySegmentsList:
     multipoint = MultiPoint(segmentlist)
-    convexhull = multipoint.convex_hull
-    plt.plot(*convexhull.exterior.xy)
+    convexhull = multipoint.envelope
+    if convexhull.geom_type == 'Polygon':
+        plt.plot(*convexhull.exterior.xy)
+    
+    
 
 
 plt.show()
