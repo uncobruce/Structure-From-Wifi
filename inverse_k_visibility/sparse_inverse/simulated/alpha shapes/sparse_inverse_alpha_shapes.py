@@ -157,12 +157,13 @@ trajectorySegmentsList = []
 # Create alpha shapes of each cluster
 i=0
 while i < len(trajectoryCoordinates):
+
     coord = trajectoryCoordinates[i]
     if i == 0:
         comparisonKValue = trajectoryKValueDictionary[coord]
         currentKValue = comparisonKValue
     singleSegmentList = []
-    while currentKValue == comparisonKValue:
+    while currentKValue == comparisonKValue and i < len(trajectoryCoordinates):
         coord = trajectoryCoordinates[i]
         singleSegmentList.append(coord)
         currentKValue = trajectoryKValueDictionary[coord]
@@ -170,16 +171,67 @@ while i < len(trajectoryCoordinates):
     trajectorySegmentsList.append(singleSegmentList)
     comparisonKValue = currentKValue
 
+clusterpolys=[]
 for segmentlist in trajectorySegmentsList:
     multipoint = MultiPoint(segmentlist)
-    convexhull = multipoint.envelope
+    convexhull = multipoint.convex_hull
     if convexhull.geom_type == 'Polygon':
         plt.plot(*convexhull.exterior.xy)
+        clusterpolys.append(convexhull)
     
-    
-
+def checkifPointinCluster(point, clusterpolys):
+    p = Point(point)
+    for poly in clusterpolys:
+        if p.within(poly):
+            return True
+    return False
+max_kval_visble_distance = 4
+k_val_dictionary = getKValueDictionary(trajectoryKValueDictionary)
+k_val_dictionary[(routerx,routery)] = 0
+def checkNeighbouringCells(k, currentkval, routerpt, testmap, max_kval_visble_distance, k_val_dictionary, clusterpolys):
+    for i in range(len(testmap)-1): # i is grid row
+        for j in range(len(testmap[0])-1): # j is grid col in that row
+            y, x = i, j
+            point1 = np.array((x,y))
+            point2 = np.array(k)
+            distanceToKValue = int(np.linalg.norm(point2-point1))
+            if distanceToKValue == 0: continue
+            elif distanceToKValue > max_kval_visble_distance: continue
+            elif checkifPointinCluster(point1, clusterpolys) == True: 
+                continue
+            else:
+                current_cell_value = testmap[y][x]
+                current_cell_kvalue = k_val_dictionary[(x,y)]
+                same_kval_factor = 1 / distanceToKValue 
+                current_cell_value = testmap[y][x]
+                P_same_kval = current_cell_value * (1 - same_kval_factor)
+                P_occ = (1 - (current_cell_value * (1 - same_kval_factor)))
+                if current_cell_kvalue == None:
+                    testmap[y][x] = P_same_kval 
+                    k_val_dictionary[(x,y)] = currentkval
+                elif current_cell_kvalue == currentkval-1  :
+                       testmap[y][x] = P_occ +.2
+                       k_val_dictionary[(x,y)] = currentkval
+                       return testmap
+       
+    return testmap
 
 plt.show()
-# Plot
 
-# Apply probability dist to each cluster
+def updateGridMap(k_val_dictionary, currentkval, kvals, max_kval_visble_distance, testmap, trajectoryCoordinates, routerpt):
+    for k in kvals:
+        testmap = checkNeighbouringCells(k, currentkval, routerpt, testmap, max_kval_visble_distance, k_val_dictionary, clusterpolys)
+  
+    return testmap
+
+plotGrid(testmap, desired_height+10, desired_width+10)
+
+testmap = updateGridMap(k_val_dictionary, 0, k0vals, max_kval_visble_distance, testmap, trajectoryCoordinates, routerpt)
+testmap = updateGridMap(k_val_dictionary, 1, k1vals, max_kval_visble_distance, testmap, trajectoryCoordinates,  routerpt)
+testmap = updateGridMap(k_val_dictionary, 2, k2vals, max_kval_visble_distance, testmap, trajectoryCoordinates, routerpt)
+testmap = updateGridMap(k_val_dictionary, 3, k3vals, max_kval_visble_distance, testmap, trajectoryCoordinates,  routerpt)
+testmap = updateGridMap(k_val_dictionary, 4, k4vals, max_kval_visble_distance, testmap, trajectoryCoordinates,  routerpt)
+
+plotGrid(testmap, desired_height+10, desired_width+10)
+
+a = MultiPoint(trajectoryCoordinates)

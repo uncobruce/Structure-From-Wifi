@@ -158,7 +158,15 @@ def plotPathGivenPoints(listofpoints, gridmap):
 #                 (53,57),
 #                 (54,72)
 #               ]
-
+# listofpoints=[ (30, 20),
+#               (30, 23),
+#               (20, 25),
+#               (19, 60),
+#               (22, 70),
+#               (19, 69),
+#               (18, 12),
+#               (25, 22)
+#               ]
 listofpoints=[ (30, 20), 
               (30, 10),
               (10,10),
@@ -240,7 +248,7 @@ gridmap, insidemappaths = plotPathGivenPoints(listofpoints, gridmap)
 outOfMapPathPoints=[(2,3), (4,77), (78,78), (76,1),(3,3)
                      ]
 outofmappaths= []
-gridmap, outofmappaths = plotPathGivenPoints(outOfMapPathPoints, gridmap)
+# gridmap, outofmappaths = plotPathGivenPoints(outOfMapPathPoints, gridmap)
 
 plotGrid(gridmap, gridmapwidth+10, gridmapheight+10)
 
