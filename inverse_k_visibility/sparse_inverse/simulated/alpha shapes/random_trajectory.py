@@ -249,10 +249,10 @@ for path in insidemappaths:
     if path != False:
         for point in path:
             trajectoryCoordinates.append(point)
-for path in outofmappaths:
-    if path != False:
-        for point in path:
-            trajectoryCoordinates.append(point)
+# for path in outofmappaths:
+#     if path != False:
+#         for point in path:
+#             trajectoryCoordinates.append(point)
 
 kvaluecolors_rgb = {}
 for color in kvaluescolordict: 
@@ -261,8 +261,19 @@ for color in kvaluescolordict:
     kvaluecolors_rgb[color2] = kvaluescolordict[color]
 
 pathandKVals = {}
+count = 1
 for point in trajectoryCoordinates:
     correspKValColor = kvisgridmap[point[1]][point[0]]
     if correspKValColor in kvaluecolors_rgb.keys():
         correspkvalue = kvaluecolors_rgb[correspKValColor]
         pathandKVals[point] = correspkvalue
+        count+=1
+    else:
+        backtrack_index=0
+        while correspKValColor not in kvaluecolors_rgb.keys():
+            backtrack_index+=1
+            similar_point = trajectoryCoordinates[trajectoryCoordinates.index(point) - backtrack_index]
+            correspKValColor = kvisgridmap[similar_point[1]][similar_point[0]]
+        correspkvalue = kvaluecolors_rgb[correspKValColor]
+        pathandKVals[point] = correspkvalue
+        count+=1

@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, MultiPoint
 import numpy as np
 import cv2
 import math
@@ -7,6 +7,8 @@ from bresenham import bresenham
 import kvisibility_floorplan
 import random_trajectory
 from shapely.ops import polygonize
+import alphashape
+from descartes import PolygonPatch
 def imageToGrid(image, desired_height, desired_width, data):   
     # Return list of grid coordinates that match image of map 
     # -----------------------------------------------------------------------
@@ -123,7 +125,7 @@ plotKCoordinates(trajectoryCoordinates, testmap)
 # Separate k value coords into different lists
 k1vals = getkValCoordinates(trajectoryKValueDictionary, 1)
 k0vals = getkValCoordinates(trajectoryKValueDictionary, 0)
-k0vals.append((routerx, routery)) # append routerpt to k0vals to avoid it being counted as a wall
+# k0vals.append((routerx, routery)) # append routerpt to k0vals to avoid it being counted as a wall
 
 k2vals = getkValCoordinates(trajectoryKValueDictionary, 2)
 k3vals = getkValCoordinates(trajectoryKValueDictionary, 3)
@@ -135,12 +137,46 @@ routerpt = (routerx,routery)
 
 # Cluster coordinates within each k value list
 def subClusterCoordinates(kvaluelist):
-    pass
+    kvaluelist = np.array(kvaluelist)
+    plt.scatter(kvaluelist[:,0], kvaluelist[:,1])
+    listofClusters=[]
+    currentRow=0
+    for i in range(len(kvaluelist)-1):
+        coord1 = kvaluelist[i]
+        coord2 = kvaluelist[i-1]
+        distance = np.linalg.norm(coord1-coord2)
+        # print(distance, coord1, coord2)
+        if distance == 1 or i == 0 or coord1[0]==coord2[0] or coord1[1]==coord2[1]:
+            print(distance, coord1, coord2)
+            listofClusters[currentRow].append(coord1)
+        else:
+            currentRow+=1
+            listofClusters[currentRow].append(coord1)
             
-
-
+trajectorySegmentsList = []
 # Create alpha shapes of each cluster
+i=0
+while i < len(trajectoryCoordinates):
+    coord = trajectoryCoordinates[i]
+    if i == 0:
+        comparisonKValue = trajectoryKValueDictionary[coord]
+        currentKValue = comparisonKValue
+    singleSegmentList = []
+    while currentKValue == comparisonKValue:
+        coord = trajectoryCoordinates[i]
+        singleSegmentList.append(coord)
+        currentKValue = trajectoryKValueDictionary[coord]
+        i+=1
+    trajectorySegmentsList.append(singleSegmentList)
+    comparisonKValue = currentKValue
 
+for segmentlist in trajectorySegmentsList:
+    multipoint = MultiPoint(segmentlist)
+    convexhull = multipoint.convex_hull
+    plt.plot(*convexhull.exterior.xy)
+
+
+plt.show()
 # Plot
 
 # Apply probability dist to each cluster
