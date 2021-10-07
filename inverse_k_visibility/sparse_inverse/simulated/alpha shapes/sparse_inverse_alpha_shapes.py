@@ -67,7 +67,20 @@ def plotKCoordinates(coordinates, data):
         data[y][x] = 0
     return data
 
-
+def makeLinesFromPointsList(pointslist):
+        lineslist=[]
+        for i in range(len(pointslist)):
+            if i == len(pointslist)-1:
+                pt1 = pointslist[i]
+                pt2 = pointslist[0]
+                line = (pt1,pt2)
+                lineslist.append(line)
+            else:
+                pt1 = pointslist[i]
+                pt2 = pointslist[i+1]
+                line = (pt1,pt2)
+                lineslist.append(line)
+        return lineslist
 def getkValCoordinates(trajectoryKValueDictionary, desiredKValue):
     # Given a k value, return all coordinates that match this k value
     kValCoordinates = []
@@ -185,6 +198,7 @@ def checkifPointinCluster(point, clusterpolys):
         if p.within(poly):
             return True
     return False
+
 max_kval_visble_distance = 4
 k_val_dictionary = getKValueDictionary(trajectoryKValueDictionary)
 k_val_dictionary[(routerx,routery)] = 0
@@ -221,7 +235,6 @@ plt.show()
 def updateGridMap(k_val_dictionary, currentkval, kvals, max_kval_visble_distance, testmap, trajectoryCoordinates, routerpt):
     for k in kvals:
         testmap = checkNeighbouringCells(k, currentkval, routerpt, testmap, max_kval_visble_distance, k_val_dictionary, clusterpolys)
-  
     return testmap
 
 plotGrid(testmap, desired_height+10, desired_width+10)
@@ -234,4 +247,21 @@ testmap = updateGridMap(k_val_dictionary, 4, k4vals, max_kval_visble_distance, t
 
 plotGrid(testmap, desired_height+10, desired_width+10)
 
-a = MultiPoint(trajectoryCoordinates)
+all_coloured_coords = []
+for i in range(len(testmap)-1): # i is grid row
+    for j in range(len(testmap[0])-1): # j is grid col in that row
+        if testmap[i][j] != 0.5:
+            all_coloured_coords.append((j,i))
+        
+
+a = MultiPoint(all_coloured_coords)
+boundingbox = a.convex_hull
+boundx, boundy = boundingbox.exterior.xy
+exterior_wall_coordinates = list(zip(boundx, boundy))
+exterior_walls = makeLinesFromPointsList(exterior_wall_coordinates)
+for wall in exterior_walls:
+    startpt, endpt = (int(wall[0][0]), int(wall[0][1])), (int(wall[1][0]), int(wall[1][1]))
+    coordinates = list(bresenham(startpt[0],startpt[1],endpt[0],endpt[1]))
+    for coord in coordinates:
+        testmap[coord[1]][coord[0]]=1
+plotGrid(testmap, desired_height+10, desired_width+10)
