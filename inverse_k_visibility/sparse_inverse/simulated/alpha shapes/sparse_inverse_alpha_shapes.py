@@ -187,7 +187,7 @@ while i < len(trajectoryCoordinates):
 clusterpolys=[]
 for segmentlist in trajectorySegmentsList:
     multipoint = MultiPoint(segmentlist)
-    convexhull = multipoint.convex_hull
+    convexhull = multipoint.envelope
     if convexhull.geom_type == 'Polygon':
         plt.plot(*convexhull.exterior.xy)
         clusterpolys.append(convexhull)
