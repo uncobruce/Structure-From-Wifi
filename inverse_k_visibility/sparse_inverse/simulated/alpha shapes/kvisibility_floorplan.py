@@ -526,15 +526,14 @@ for j in range(len(segmentLinesDict)-1,-1,-1):
     kvalue=j
     kvaluescolordict[facecolors[j]] = kvalue
     print(j, facecolors[j])
-    for i in range(kvalue, -1,-1):
-        
+    for i in range(kvalue, -1,-1):     
         kregion=getKRegion(j,kvalue, coordinates, segmentLinesDict,routerpt)
         kfill = PolygonPatch(kregion,facecolor=facecolors[j], edgecolor='None')
         ax.add_patch(kfill)
         
 
 
-plt.savefig('kvis_map_testroom.png',bbox_inches = 'tight',pad_inches = 0)
+plt.savefig('kvis_map_testroom.png', bbox_inches = 'tight', pad_inches = 0)
 plt.show()    
 
 

@@ -167,7 +167,6 @@ while i < len(trajectoryCoordinates):
     trajectorySegmentsList.append(singleSegmentList)
     comparisonKValue = currentKValue
 
-
 k_val_dictionary = getKValueDictionary(trajectoryKValueDictionary)
 
 def getCornersofSegment(segment):
@@ -187,8 +186,8 @@ def getCornersofSegment(segment):
             currentcorner = point1
     return cornerpts
 
-def drawKValueCone(kvalue, segment, routerpt):
-    # Given a k value and its corresp. trajectory segment,
+def drawKValueCone(segment, routerpt):
+    # Given a trajectory segment,
     # Draw the k value polygon.
     cornerpts = getCornersofSegment(segment)
     totalcones = []
@@ -205,7 +204,40 @@ def drawKValueCone(kvalue, segment, routerpt):
     kregioncones = [cone for cone in totalcones]
     polygon_final = cascaded_union(kregioncones)
     return polygon_final
-    
-poly = drawKValueCone(0, trajectorySegmentsList[0], routerpt)
-plt.show()
 
+
+def drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt):
+    segmentstoDraw = []
+    for segment in trajectorySegmentsList:
+        segment_kvalue = k_val_dictionary[(segment[0][0], segment[0][1])] #first pt k value is seg kval
+        if segment_kvalue == kvalue:
+            segmentstoDraw.append(segment)
+    polygons = []
+    for segment in segmentstoDraw:
+        polygon = drawKValueCone(segment, routerpt)
+        polygons.append(polygon)
+    return polygons
+
+
+kvalues = [0, 1, 2, 3, 4, 5]
+
+ax=plt.gca()
+ax.set_xlim(8, 73)
+ax.set_ylim(8, 73)
+facecolors=['red','yellow','blue','green','orange', 'magenta', 'navy', 'teal', 'tan', 'lightsalmon','lightyellow','coral','rosybrown']
+
+for i in range(len(kvalues), -1, -1):
+    kvalue = i 
+    polygons = drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt)
+    for poly in polygons:
+        if poly.geom_type == 'Polygon':
+            
+            kfill = PolygonPatch(poly,facecolor=facecolors[i], edgecolor='black')
+            ax.add_patch(kfill)    
+  
+            
+ 
+
+
+
+plt.show()
