@@ -240,13 +240,15 @@ for i in range(len(kvalues), -1, -1):
         ax.add_patch(kfill)    
         all_kval_polygons.append(poly)
         all_corresp_kvals.append(kvalue)
+plt.show()
 
 kval_poly_corresp_kval = list(zip(all_kval_polygons, all_corresp_kvals)) # all cone shapes with their corresp. k-values       
 kval_poly_corresp_kval.reverse() # read starting from k0 (easier)
 
 intersections = []
-for i in range(len(kval_poly_corresp_kval)):
-    ele = kval_poly_corresp_kval[i]
+differencepolys = []
+for i in range(len(kval_poly_corresp_kval)): # go through list of kval polys created and obtain intersections
+    ele = kval_poly_corresp_kval[i]             # between kval polys with consecutive kvalues
     k_val_poly = ele[0]
     comparekval = ele[1]
     for j in range(len(kval_poly_corresp_kval)):
@@ -255,27 +257,42 @@ for i in range(len(kval_poly_corresp_kval)):
             continue
         other_poly = other_ele[0]
         other_ele_kval = other_ele[1]
-        if other_ele_kval == comparekval + 1:
-            intersection = other_poly.intersection(k_val_poly)
-            if intersection.geom_type == 'Polygon':
+        if (other_ele_kval == comparekval + 1):
+            difference = other_poly.difference(k_val_poly)
+            intersection = difference.intersection(k_val_poly)
+            print(intersection)
+            if intersection.geom_type == 'LineString' or intersection.geom_type == 'MultiLineString':
                 intersections.append(intersection)
-            
-        
+ 
 
-poly1 = kval_poly_corresp_kval[1][0] # k0 poly
-poly2 = kval_poly_corresp_kval[2][0] # k1 poly
-
-intersection = poly2.intersection(poly1)
-boundary = []
-for point in intersection.exterior.coords:
-    if point == routerpt: continue
-
-    boundary.append(point)
+boundary=[]       
+for intersectionline in intersections:
+    if intersectionline == 'LineString':
+        for point in intersectionline.coords:
+            if point == routerpt: continue
+            boundary.append(point)
+    elif intersectionline == 'MultiLineString':
+        for line in intersectionline:
+            for point in intersectionline.coords:
+                if point == routerpt: continue
+                boundary.append(point)
+boundary = list(dict.fromkeys(boundary))
+for i in range(len(boundary)-1):
+    pt1 = boundary[i]
+    pt2 = boundary[i+1]
     
+    x1, x2 = pt1[0], pt2[0]
+    y1, y2 = pt1[1], pt2[1]
+    try:
+        slope = (y2-y1)/(x2-x1)
+        if slope == 1:
+            plt.plot([x1,x2],[y1,y2],linewidth='3.0', color='black')
+    except ZeroDivisionError:   
+        plt.plot([x1,x2],[y1,y2],linewidth='3.0', color='black')
     
-print(boundary)
-pt1 = boundary[0]
-pt2 = boundary[1]
+poly1 = kval_poly_corresp_kval[1][0]
+poly2 = kval_poly_corresp_kval[2][0]
 
-plt.plot([pt1[0],pt2[0]], [pt1[1],pt2[1]],linewidth='3.0',color='black')
+a = poly2.difference(poly1)
+
 plt.show()
