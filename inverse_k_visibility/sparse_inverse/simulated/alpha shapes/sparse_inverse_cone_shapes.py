@@ -244,6 +244,24 @@ for i in range(len(kvalues), -1, -1):
 kval_poly_corresp_kval = list(zip(all_kval_polygons, all_corresp_kvals)) # all cone shapes with their corresp. k-values       
 kval_poly_corresp_kval.reverse() # read starting from k0 (easier)
 
+intersections = []
+for i in range(len(kval_poly_corresp_kval)):
+    ele = kval_poly_corresp_kval[i]
+    k_val_poly = ele[0]
+    comparekval = ele[1]
+    for j in range(len(kval_poly_corresp_kval)):
+        other_ele = kval_poly_corresp_kval[j]
+        if other_ele == ele: 
+            continue
+        other_poly = other_ele[0]
+        other_ele_kval = other_ele[1]
+        if other_ele_kval == comparekval + 1:
+            intersection = other_poly.intersection(k_val_poly)
+            if intersection.geom_type == 'Polygon':
+                intersections.append(intersection)
+            
+        
+
 poly1 = kval_poly_corresp_kval[1][0] # k0 poly
 poly2 = kval_poly_corresp_kval[2][0] # k1 poly
 
