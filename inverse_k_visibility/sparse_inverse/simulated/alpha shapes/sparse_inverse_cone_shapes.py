@@ -236,15 +236,28 @@ for i in range(len(kvalues), -1, -1):
     kvalue = i 
     polygons, poly_k_vals = drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt)
     for poly in polygons:
-        kfill = PolygonPatch(poly,facecolor=facecolors[i], edgecolor='black')
+        kfill = PolygonPatch(poly,facecolor=facecolors[i])
         ax.add_patch(kfill)    
         all_kval_polygons.append(poly)
         all_corresp_kvals.append(kvalue)
-  
+
 kval_poly_corresp_kval = list(zip(all_kval_polygons, all_corresp_kvals)) # all cone shapes with their corresp. k-values       
- 
+kval_poly_corresp_kval.reverse() # read starting from k0 (easier)
 
+poly1 = kval_poly_corresp_kval[1][0] # k0 poly
+poly2 = kval_poly_corresp_kval[2][0] # k1 poly
 
+intersection = poly2.intersection(poly1)
+boundary = []
+for point in intersection.exterior.coords:
+    if point == routerpt: continue
 
+    boundary.append(point)
+    
+    
+print(boundary)
+pt1 = boundary[0]
+pt2 = boundary[1]
 
+plt.plot([pt1[0],pt2[0]], [pt1[1],pt2[1]],linewidth='3.0',color='black')
 plt.show()
