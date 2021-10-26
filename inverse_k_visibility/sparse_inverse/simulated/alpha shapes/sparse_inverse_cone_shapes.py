@@ -208,6 +208,7 @@ def drawKValueCone(segment, routerpt):
 
 def drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt):
     segmentstoDraw = []
+    poly_k_vals=[]
     for segment in trajectorySegmentsList:
         segment_kvalue = k_val_dictionary[(segment[0][0], segment[0][1])] #first pt k value is seg kval
         if segment_kvalue == kvalue:
@@ -215,8 +216,10 @@ def drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, rout
     polygons = []
     for segment in segmentstoDraw:
         polygon = drawKValueCone(segment, routerpt)
-        polygons.append(polygon)
-    return polygons
+        if polygon.geom_type == 'Polygon': # Some polys are recorded as geometry collections, not sure why
+            polygons.append(polygon)
+            poly_k_vals.append(kvalue)
+    return polygons, poly_k_vals
 
 
 kvalues = [0, 1, 2, 3, 4, 5]
@@ -226,17 +229,21 @@ ax.set_xlim(8, 73)
 ax.set_ylim(8, 73)
 facecolors=['red','yellow','blue','green','orange', 'magenta', 'navy', 'teal', 'tan', 'lightsalmon','lightyellow','coral','rosybrown']
 
+all_kval_polygons = []
+all_corresp_kvals = []
+
 for i in range(len(kvalues), -1, -1):
     kvalue = i 
-    polygons = drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt)
+    polygons, poly_k_vals = drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt)
     for poly in polygons:
-        if poly.geom_type == 'Polygon':
-            
-            kfill = PolygonPatch(poly,facecolor=facecolors[i], edgecolor='black')
-            ax.add_patch(kfill)    
+        kfill = PolygonPatch(poly,facecolor=facecolors[i], edgecolor='black')
+        ax.add_patch(kfill)    
+        all_kval_polygons.append(poly)
+        all_corresp_kvals.append(kvalue)
   
-            
+kval_poly_corresp_kval = list(zip(all_kval_polygons, all_corresp_kvals)) # all cone shapes with their corresp. k-values       
  
+
 
 
 
