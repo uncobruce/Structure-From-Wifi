@@ -219,6 +219,7 @@ def drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, rout
         if polygon.geom_type == 'Polygon': # Some polys are recorded as geometry collections, not sure why
             polygons.append(polygon)
             poly_k_vals.append(kvalue)
+
     return polygons, poly_k_vals
 
 
@@ -240,59 +241,59 @@ for i in range(len(kvalues), -1, -1):
         ax.add_patch(kfill)    
         all_kval_polygons.append(poly)
         all_corresp_kvals.append(kvalue)
+
 plt.show()
+# kval_poly_corresp_kval = list(zip(all_kval_polygons, all_corresp_kvals)) # all cone shapes with their corresp. k-values       
+# kval_poly_corresp_kval.reverse() # read starting from k0 (easier)
 
-kval_poly_corresp_kval = list(zip(all_kval_polygons, all_corresp_kvals)) # all cone shapes with their corresp. k-values       
-kval_poly_corresp_kval.reverse() # read starting from k0 (easier)
-
-intersections = []
-differencepolys = []
-for i in range(len(kval_poly_corresp_kval)): # go through list of kval polys created and obtain intersections
-    ele = kval_poly_corresp_kval[i]             # between kval polys with consecutive kvalues
-    k_val_poly = ele[0]
-    comparekval = ele[1]
-    for j in range(len(kval_poly_corresp_kval)):
-        other_ele = kval_poly_corresp_kval[j]
-        if other_ele == ele: 
-            continue
-        other_poly = other_ele[0]
-        other_ele_kval = other_ele[1]
-        if (other_ele_kval == comparekval + 1):
-            difference = other_poly.difference(k_val_poly)
-            intersection = difference.intersection(k_val_poly)
-            print(intersection)
-            if intersection.geom_type == 'LineString' or intersection.geom_type == 'MultiLineString':
-                intersections.append(intersection)
+# intersections = []
+# differencepolys = []
+# for i in range(len(kval_poly_corresp_kval)): # go through list of kval polys created and obtain intersections
+#     ele = kval_poly_corresp_kval[i]             # between kval polys with consecutive kvalues
+#     k_val_poly = ele[0]
+#     comparekval = ele[1]
+#     for j in range(len(kval_poly_corresp_kval)):
+#         other_ele = kval_poly_corresp_kval[j]
+#         if other_ele == ele: 
+#             continue
+#         other_poly = other_ele[0]
+#         other_ele_kval = other_ele[1]
+#         if (other_ele_kval == comparekval + 1):
+#             difference = other_poly.difference(k_val_poly)
+#             intersection = difference.intersection(k_val_poly)
+#             if intersection.geom_type == 'LineString' or intersection.geom_type == 'MultiLineString':
+#                 intersections.append(intersection)
  
 
-boundary=[]       
-for intersectionline in intersections:
-    if intersectionline == 'LineString':
-        for point in intersectionline.coords:
-            if point == routerpt: continue
-            boundary.append(point)
-    elif intersectionline == 'MultiLineString':
-        for line in intersectionline:
-            for point in intersectionline.coords:
-                if point == routerpt: continue
-                boundary.append(point)
-boundary = list(dict.fromkeys(boundary))
-for i in range(len(boundary)-1):
-    pt1 = boundary[i]
-    pt2 = boundary[i+1]
+# boundary=[]       
+# for intersectionline in intersections:
+#     if intersectionline.geom_type == 'LineString':
+#         for point in intersectionline.coords:
+#             if point == routerpt: continue
+#             boundary.append(point)
+#     elif intersectionline.geom_type == 'MultiLineString':
+#         for line in intersectionline:
+#             for point in line.coords:
+#                 if point == routerpt: continue
+#                 boundary.append(point)
+                
+# boundary = list(dict.fromkeys(boundary))
+# for i in range(len(boundary)-1):
+#     pt1 = boundary[i]
+#     pt2 = boundary[i+1]
     
-    x1, x2 = pt1[0], pt2[0]
-    y1, y2 = pt1[1], pt2[1]
-    try:
-        slope = (y2-y1)/(x2-x1)
-        if slope == 1:
-            plt.plot([x1,x2],[y1,y2],linewidth='3.0', color='black')
-    except ZeroDivisionError:   
-        plt.plot([x1,x2],[y1,y2],linewidth='3.0', color='black')
+#     x1, x2 = pt1[0], pt2[0]
+#     y1, y2 = pt1[1], pt2[1]
+#     try:
+#         slope = (y2-y1)/(x2-x1)
+#         if slope == 1:
+#             plt.plot([x1,x2],[y1,y2],linewidth='3.0', color='black')
+#     except ZeroDivisionError:   
+#         plt.plot([x1,x2],[y1,y2],linewidth='3.0', color='black')
     
-poly1 = kval_poly_corresp_kval[1][0]
-poly2 = kval_poly_corresp_kval[2][0]
+# poly1 = kval_poly_corresp_kval[1][0]
+# poly2 = kval_poly_corresp_kval[2][0]
 
-a = poly2.difference(poly1)
+# a = poly2.difference(poly1)
 
-plt.show()
+
