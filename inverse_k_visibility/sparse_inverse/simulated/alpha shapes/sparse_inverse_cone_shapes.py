@@ -222,7 +222,7 @@ def drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, rout
     Identify all segments given a certain k-value,
     and create all cone shape Polygon objects corresponding to each segment
     '''
-    print('\ncreating polygons for k-value: ',kvalue)
+    print('\ncreating polygons for k-value:',kvalue)
     segmentstoDraw = []
     poly_k_vals=[]
     for segment in trajectorySegmentsList:
@@ -258,6 +258,10 @@ for i in range(len(kvalues), -1, -1):
         ax.add_patch(kfill)    
         all_kval_polygons.append(poly)
         all_corresp_kvals.append(kvalue)
+
+print(all_kval_polygons)
+
+
 
 plt.show()
 
