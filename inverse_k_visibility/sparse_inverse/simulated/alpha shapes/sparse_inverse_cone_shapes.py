@@ -120,7 +120,7 @@ floormap = initializeOccupancyGrid(desired_height+10, desired_width+10)
 floormap = imageToGrid(img1, desired_height, desired_width, floormap)
 
 # Plot router point scaled down to grid size
-routery, routerx = int((desired_height+10)*kvisibility_floorplan.routery/maxcoordy), int((desired_height+10)*kvisibility_floorplan.routerx/maxcoordx)
+routery, routerx = int((desired_height)*kvisibility_floorplan.routery/maxcoordy), int((desired_height+10)*kvisibility_floorplan.routerx/maxcoordx)
 floormap[routery][routerx] = 1 # router point
 plotGrid(floormap, desired_height+10, desired_width+10)
 
@@ -147,12 +147,11 @@ k5vals = getkValCoordinates(trajectoryKValueDictionary, 5)
 
 # Get router point
 routerpt = (routerx,routery)
-
-
-            
+    
 # Seperate trajectory into different segments based on if they are continuous and have same kval
 trajectorySegmentsList = []
 i=0
+coordinates_count=0
 while i < len(trajectoryCoordinates):
     coord = trajectoryCoordinates[i]
     if i == 0:
@@ -162,14 +161,24 @@ while i < len(trajectoryCoordinates):
     while currentKValue == comparisonKValue and i < len(trajectoryCoordinates):
         coord = trajectoryCoordinates[i]
         singleSegmentList.append(coord)
+        coordinates_count+=1
         currentKValue = trajectoryKValueDictionary[coord]
         i+=1
     trajectorySegmentsList.append(singleSegmentList)
+    
     comparisonKValue = currentKValue
-
 k_val_dictionary = getKValueDictionary(trajectoryKValueDictionary)
 
+assert coordinates_count == len(trajectoryCoordinates), "Total number of coordinates in array [trajectorySegmentsList] must equal number of coordinates in array [trajectoryCoordinates]"
+
 def getCornersofSegment(segment):
+    ''' 
+        Given a trajectory segment,
+         find the beginning and end of the segment
+         (a segment is a continuous straight line consisting of coordinates having the same k-value -
+         therefore, beginning/end points are at the start/end of a line after a turn or when a new k-value
+         is encountered).
+    '''
     cornerpts = []
     for i in range(len(segment)-1):
         point1 = segment[i]
@@ -187,8 +196,10 @@ def getCornersofSegment(segment):
     return cornerpts
 
 def drawKValueCone(segment, routerpt):
-    # Given a trajectory segment,
-    # Draw the k value polygon.
+    '''
+    Given a trajectory segment,
+        draw the k value polygon.
+        '''
     cornerpts = getCornersofSegment(segment)
     totalcones = []
     for i in range(len(cornerpts)-1):
@@ -207,19 +218,24 @@ def drawKValueCone(segment, routerpt):
 
 
 def drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt):
+    ''' 
+    Identify all segments given a certain k-value,
+    and create all cone shape Polygon objects corresponding to each segment
+    '''
+    print('\ncreating polygons for k-value: ',kvalue)
     segmentstoDraw = []
     poly_k_vals=[]
     for segment in trajectorySegmentsList:
         segment_kvalue = k_val_dictionary[(segment[0][0], segment[0][1])] #first pt k value is seg kval
         if segment_kvalue == kvalue:
-            segmentstoDraw.append(segment)
+            segmentstoDraw.append(segment)    
     polygons = []
     for segment in segmentstoDraw:
         polygon = drawKValueCone(segment, routerpt)
-        if polygon.geom_type == 'Polygon': # Some polys are recorded as geometry collections, not sure why
+        print(polygon)
+        if polygon.geom_type == 'Polygon': # Some polys are recorded as Empty geometry collections
             polygons.append(polygon)
             poly_k_vals.append(kvalue)
-
     return polygons, poly_k_vals
 
 
@@ -233,6 +249,7 @@ facecolors=['red','yellow','blue','green','orange', 'magenta', 'navy', 'teal', '
 all_kval_polygons = []
 all_corresp_kvals = []
 
+# Plot all Polygon objects 
 for i in range(len(kvalues), -1, -1):
     kvalue = i 
     polygons, poly_k_vals = drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt)
