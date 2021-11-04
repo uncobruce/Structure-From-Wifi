@@ -246,8 +246,9 @@ ax.set_xlim(8, 73)
 ax.set_ylim(8, 73)
 facecolors=['red','yellow','blue','green','orange', 'magenta', 'navy', 'teal', 'tan', 'lightsalmon','lightyellow','coral','rosybrown']
 
-all_kval_polygons = []
-all_corresp_kvals = []
+all_kval_polygons = [] # list of all polygons created, from k_n --> k0
+all_corresp_kvals = [] # corresp. k-values for every polygon created
+
 
 # Plot all Polygon objects 
 for i in range(len(kvalues), -1, -1):
@@ -259,9 +260,37 @@ for i in range(len(kvalues), -1, -1):
         all_kval_polygons.append(poly)
         all_corresp_kvals.append(kvalue)
 
-print(all_kval_polygons)
+poly0, poly1 = all_kval_polygons[-2], all_kval_polygons[-3]
 
+# "true" k1 poly based on poly0 and poly1
+k1_poly = poly1.difference(poly0)
+difference_polys = []
+for i in range(len(all_kval_polygons)):
+    current_kval_poly = all_kval_polygons[i]
+    current_kvalue = all_corresp_kvals[i]
+    if current_kvalue == 0:
+        break
+    for j in range(len(all_kval_polygons)-1):
+        next_kval_poly = all_kval_polygons[j]
+        if current_kval_poly == next_kval_poly: continue
+        next_kvalue = all_corresp_kvals[j]
+        if next_kvalue != current_kvalue -1: continue
+        else:
+            differencepoly = next_kval_poly.difference(current_kval_poly)
+            if differencepoly not in difference_polys:
+                difference_polys.append(differencepoly)
+        
+plt.show()
 
+ax2=plt.gca()
+ax2.set_xlim(8, 73)
+ax2.set_ylim(8, 73)
+for i in range(len(kvalues), -1, -1):
+    kvalue = i 
+    for poly in difference_polys:
+        kfill = PolygonPatch(poly,facecolor=facecolors[i])
+        ax2.add_patch(kfill)    
+        
 
 plt.show()
 
