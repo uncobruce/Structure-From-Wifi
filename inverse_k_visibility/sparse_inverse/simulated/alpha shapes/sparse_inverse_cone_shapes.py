@@ -303,5 +303,18 @@ for i in range(len(difference_polys)):
         k0_diffpolys_intersections.append(diffpoly)
         
 k1_1 = k0_diffpolys_intersections[2]
-print(k1_1.exterior.coords.xy)
+
+k1_1_coords = k1_1.exterior.coords
+
+x_coords = []
+k1_1_points = []
+for coord in k1_1_coords:
+    if coord[0] not in x_coords:
+        x_coords.append(coord[0])
+    k1_1_points.append((coord[0],coord[1]))
+edge2edgedist = abs(max(x_coords)-min(x_coords))
+centroid_k1_1 = k1_1.centroid.coords.xy
+cent_x, cent_y = centroid_k1_1[0][0], centroid_k1_1[1][0]
+
+
 plt.show()
