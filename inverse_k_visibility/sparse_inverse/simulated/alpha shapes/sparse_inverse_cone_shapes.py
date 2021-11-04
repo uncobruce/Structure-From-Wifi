@@ -316,5 +316,6 @@ edge2edgedist = abs(max(x_coords)-min(x_coords))
 centroid_k1_1 = k1_1.centroid.coords.xy
 cent_x, cent_y = centroid_k1_1[0][0], centroid_k1_1[1][0]
 
+# plt.plot([pt1[0],pt2[0]], [pt1[1],pt2[1]],linewidth='3.0',color='black')
 
 plt.show()
