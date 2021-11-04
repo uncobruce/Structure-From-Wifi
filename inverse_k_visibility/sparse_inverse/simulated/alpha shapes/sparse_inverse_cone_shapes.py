@@ -120,7 +120,7 @@ floormap = initializeOccupancyGrid(desired_height+10, desired_width+10)
 floormap = imageToGrid(img1, desired_height, desired_width, floormap)
 
 # Plot router point scaled down to grid size
-routery, routerx = int((desired_height)*kvisibility_floorplan.routery/maxcoordy), int((desired_height+10)*kvisibility_floorplan.routerx/maxcoordx)
+routery, routerx = int((desired_height)*kvisibility_floorplan.routery/maxcoordy), int((desired_height+30)*kvisibility_floorplan.routerx/maxcoordx)
 floormap[routery][routerx] = 1 # router point
 plotGrid(floormap, desired_height+10, desired_width+10)
 
@@ -138,7 +138,6 @@ plotKCoordinates(trajectoryCoordinates, testmap)
 # Separate k value coords into different lists
 k1vals = getkValCoordinates(trajectoryKValueDictionary, 1)
 k0vals = getkValCoordinates(trajectoryKValueDictionary, 0)
-# k0vals.append((routerx, routery)) # append routerpt to k0vals to avoid it being counted as a wall
 
 k2vals = getkValCoordinates(trajectoryKValueDictionary, 2)
 k3vals = getkValCoordinates(trajectoryKValueDictionary, 3)
@@ -275,7 +274,6 @@ for i in range(len(all_kval_polygons)):
         next_kvalue = all_corresp_kvals[j]
         if current_kval_poly == next_kval_poly or current_kvalue == next_kvalue: continue
         if next_kval_poly.intersects(current_kval_poly) and next_kval_poly.intersection(current_kval_poly).geom_type == 'Polygon' and next_kvalue < current_kvalue:
-            print('now checking next kvalue: ', next_kvalue, 'for', 'current_kvalue', current_kvalue)
             differencepoly = current_kval_poly.difference(next_kval_poly)
             if differencepoly not in difference_polys:
                 difference_polys.append(differencepoly)
@@ -295,12 +293,15 @@ for i in range(len(difference_polys)):
     kfill = PolygonPatch(poly,facecolor=colour)
     ax2.add_patch(kfill)    
     
-''' Draw complete cone shapes for k = 0'''
-polygons, poly_k_vals = drawPolygonsForKValue(0, trajectorySegmentsList, k_val_dictionary, routerpt)
-for poly in polygons:
-    kfill = PolygonPatch(poly,facecolor=facecolors[0])
-    ax2.add_patch(kfill)    
+#k1 intersections with  k0
+k0_coneshapes = [all_kval_polygons[i] for i in range(len(all_kval_polygons)) if all_corresp_kvals[i]==0]
+k0_poly = k0_coneshapes[0]
+k0_diffpolys_intersections=[]
+for i in range(len(difference_polys)):
+    diffpoly = difference_polys[i]
+    if diffpoly.intersects(k0_poly) and difference_polys_kvals[i] == 1:
+        k0_diffpolys_intersections.append(diffpoly)
+        
+k1_1 = k0_diffpolys_intersections[2]
+print(k1_1.exterior.coords.xy)
 plt.show()
-
-
-
