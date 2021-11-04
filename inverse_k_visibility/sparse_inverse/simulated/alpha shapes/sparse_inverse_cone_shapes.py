@@ -264,34 +264,42 @@ poly0, poly1 = all_kval_polygons[-2], all_kval_polygons[-3]
 
 # "true" k1 poly based on poly0 and poly1
 k1_poly = poly1.difference(poly0)
-difference_polys = []
+difference_polys, difference_polys_kvals = [], []
+''' k0-k1'''
 for i in range(len(all_kval_polygons)):
     current_kval_poly = all_kval_polygons[i]
     current_kvalue = all_corresp_kvals[i]
-    if current_kvalue == 0:
-        break
+    if current_kvalue == 0 : continue
     for j in range(len(all_kval_polygons)-1):
         next_kval_poly = all_kval_polygons[j]
-        if current_kval_poly == next_kval_poly: continue
         next_kvalue = all_corresp_kvals[j]
-        if next_kvalue != current_kvalue -1: continue
-        else:
-            differencepoly = next_kval_poly.difference(current_kval_poly)
+        if current_kval_poly == next_kval_poly or current_kvalue == next_kvalue: continue
+        if next_kval_poly.intersects(current_kval_poly) and next_kval_poly.intersection(current_kval_poly).geom_type == 'Polygon' and next_kvalue < current_kvalue:
+            print('now checking next kvalue: ', next_kvalue, 'for', 'current_kvalue', current_kvalue)
+            differencepoly = current_kval_poly.difference(next_kval_poly)
             if differencepoly not in difference_polys:
                 difference_polys.append(differencepoly)
+                print(differencepoly)
+                difference_polys_kvals.append(current_kvalue)
         
 plt.show()
 
 ax2=plt.gca()
 ax2.set_xlim(8, 73)
 ax2.set_ylim(8, 73)
-for i in range(len(kvalues), -1, -1):
-    kvalue = i 
-    for poly in difference_polys:
-        kfill = PolygonPatch(poly,facecolor=facecolors[i])
-        ax2.add_patch(kfill)    
-        
-
+''' Obtain intersection polygons for kvals: {1, ..., n}'''
+for i in range(len(difference_polys)):
+    poly = difference_polys[i]
+    poly_kval = difference_polys_kvals[i]
+    colour = facecolors[poly_kval]
+    kfill = PolygonPatch(poly,facecolor=colour)
+    ax2.add_patch(kfill)    
+    
+''' Draw complete cone shapes for k = 0'''
+polygons, poly_k_vals = drawPolygonsForKValue(0, trajectorySegmentsList, k_val_dictionary, routerpt)
+for poly in polygons:
+    kfill = PolygonPatch(poly,facecolor=facecolors[0])
+    ax2.add_patch(kfill)    
 plt.show()
 
 
