@@ -41,8 +41,6 @@ def imageToGrid(image, desired_height, desired_width, data):
         mapx, mapy = coords[0],coords[1]
      
         data[mapy-5][mapx+5] = 1
-
-
     return data
 
 def plotGrid(data, desired_height, desired_width):  
@@ -188,10 +186,10 @@ def getCornersofSegment(segment):
             continue
         if point2[0] != currentcorner[0] and point1[0] == currentcorner[0]:
             cornerpts.append(point1)
-            currentcorner = point1
+            currentcorner = point2
         if point2[1] != currentcorner[1] and point1[1] == currentcorner[1]:
             cornerpts.append(point1)
-            currentcorner = point1
+            currentcorner = point2
     return cornerpts
 
 def drawKValueCone(segment, routerpt):
@@ -225,7 +223,7 @@ def drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, rout
     segmentstoDraw = []
     poly_k_vals=[]
     for segment in trajectorySegmentsList:
-        segment_kvalue = k_val_dictionary[(segment[0][0], segment[0][1])] #first pt k value is seg kval
+        segment_kvalue = k_val_dictionary[(segment[1][0], segment[1][1])] #first pt k value is seg kval
         if segment_kvalue == kvalue:
             segmentstoDraw.append(segment)    
     polygons = []
@@ -249,7 +247,7 @@ all_kval_polygons = [] # list of all polygons created, from k_n --> k0
 all_corresp_kvals = [] # corresp. k-values for every polygon created
 
 
-# Plot all Polygon objects 
+# Plot all cone shapes 
 for i in range(len(kvalues), -1, -1):
     kvalue = i 
     polygons, poly_k_vals = drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt)
@@ -259,36 +257,60 @@ for i in range(len(kvalues), -1, -1):
         all_kval_polygons.append(poly)
         all_corresp_kvals.append(kvalue)
 
-poly0, poly1 = all_kval_polygons[-2], all_kval_polygons[-3]
-
-# "true" k1 poly based on poly0 and poly1
-k1_poly = poly1.difference(poly0)
+print('------------------------------------------')
+# Remove common parts of cone shapes to refine every kval poly, from the perspective of k-vals to k-1 vals
 difference_polys, difference_polys_kvals = [], []
-''' k0-k1'''
 for i in range(len(all_kval_polygons)):
     current_kval_poly = all_kval_polygons[i]
     current_kvalue = all_corresp_kvals[i]
     if current_kvalue == 0 : continue
-    for j in range(len(all_kval_polygons)-1):
+    for j in range(len(all_kval_polygons)):
         next_kval_poly = all_kval_polygons[j]
         next_kvalue = all_corresp_kvals[j]
         if current_kval_poly == next_kval_poly or current_kvalue == next_kvalue: continue
-        if next_kval_poly.intersects(current_kval_poly) and next_kval_poly.intersection(current_kval_poly).geom_type == 'Polygon' and next_kvalue < current_kvalue:
-            differencepoly = current_kval_poly.difference(next_kval_poly)
-            if differencepoly not in difference_polys:
-                difference_polys.append(differencepoly)
-                print(differencepoly)
-                difference_polys_kvals.append(current_kvalue)
-        
+        if next_kval_poly.intersects(current_kval_poly) and next_kval_poly.intersection(current_kval_poly).geom_type == 'Polygon':
+            if next_kvalue < current_kvalue:
+                differencepoly = current_kval_poly.difference(next_kval_poly)
+                # print(differencepoly)
+                if differencepoly not in difference_polys:
+                    difference_polys.append(differencepoly)
+                    # print(differencepoly)
+                    difference_polys_kvals.append(current_kvalue)
+# difference_polys.reverse()
+# difference_polys_kvals.reverse()
+difference_polys_refined, difference_polys_refined_kvals = [], []
+
+
+bigyellow = difference_polys[-1]
+lilblue = difference_polys[-5]
+
+# Further remove common parts of cone shapes to refine every kval poly, from the perspective of k-vals to k+1 vals
+for i in range(len(difference_polys)):
+    current_diff_poly = difference_polys[i]
+    current_kvalue = difference_polys_kvals[i]
+    for j in range(len(difference_polys)):
+        next_diff_poly = difference_polys[j]
+        next_kval = difference_polys_kvals[j]
+        if current_kvalue == 0: continue
+        if current_diff_poly == next_kval_poly or current_kvalue == next_kvalue: continue
+        if current_diff_poly.intersects(next_diff_poly)  and next_diff_poly.intersection(current_diff_poly).geom_type == 'Polygon' and current_kvalue > next_kvalue:
+            differencepoly = current_diff_poly.difference(next_diff_poly)
+            print(differencepoly)
+            if differencepoly.is_empty == False and differencepoly not in difference_polys_refined:
+                difference_polys_refined.append(differencepoly)
+                difference_polys_refined_kvals.append(current_kvalue)
+            
 plt.show()
 
 ax2=plt.gca()
 ax2.set_xlim(8, 73)
 ax2.set_ylim(8, 73)
-''' Obtain intersection polygons for kvals: {1, ..., n}'''
-for i in range(len(difference_polys)):
-    poly = difference_polys[i]
-    poly_kval = difference_polys_kvals[i]
+
+''' Plot intersection polygons for kvals: {1, ..., n}'''
+for i in range(len(difference_polys_refined)):
+    poly = difference_polys_refined[i]
+    poly_kval = difference_polys_refined_kvals[i]
+    if poly_kval != 2: continue
     colour = facecolors[poly_kval]
     kfill = PolygonPatch(poly,facecolor=colour)
     ax2.add_patch(kfill)    
@@ -302,20 +324,20 @@ for i in range(len(difference_polys)):
     if diffpoly.intersects(k0_poly) and difference_polys_kvals[i] == 1:
         k0_diffpolys_intersections.append(diffpoly)
         
-k1_1 = k0_diffpolys_intersections[2]
+# k1_1 = k0_diffpolys_intersections[2]
 
-k1_1_coords = k1_1.exterior.coords
+# k1_1_coords = k1_1.exterior.coords
 
-x_coords = []
-k1_1_points = []
-for coord in k1_1_coords:
-    if coord[0] not in x_coords:
-        x_coords.append(coord[0])
-    k1_1_points.append((coord[0],coord[1]))
-edge2edgedist = abs(max(x_coords)-min(x_coords))
-centroid_k1_1 = k1_1.centroid.coords.xy
-cent_x, cent_y = centroid_k1_1[0][0], centroid_k1_1[1][0]
+# x_coords = []
+# k1_1_points = []
+# for coord in k1_1_coords:
+#     if coord[0] not in x_coords:
+#         x_coords.append(coord[0])
+#     k1_1_points.append((coord[0],coord[1]))
+# edge2edgedist = abs(max(x_coords)-min(x_coords))
+# centroid_k1_1 = k1_1.centroid.coords.xy
+# cent_x, cent_y = centroid_k1_1[0][0], centroid_k1_1[1][0]
 
-# plt.plot([pt1[0],pt2[0]], [pt1[1],pt2[1]],linewidth='3.0',color='black')
+# # plt.plot([pt1[0],pt2[0]], [pt1[1],pt2[1]],linewidth='3.0',color='black')
 
 plt.show()
