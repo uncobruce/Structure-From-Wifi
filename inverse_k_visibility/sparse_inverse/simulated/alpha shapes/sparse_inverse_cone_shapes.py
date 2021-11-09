@@ -280,8 +280,7 @@ differencepolys, differencepolyskvals =[], []
 
 # I should automate this but this is ok for now
 for cone in k0polys:
-    differencepolys.append(cone)
-    differencepolyskvals.append(0)
+
     for cone2 in k1polys:
         intersection = cone2.intersection(cone)
         if intersection.geom_type == 'Polygon': 
@@ -292,29 +291,61 @@ for cone in k0polys:
             if routerpt not in diffcoords:
                 differencepolys.append(diff)
                 differencepolyskvals.append(1)
-
-for cone in differencepolys:
+intk2polys=[]
+for cone in k0polys:
     for cone2 in k2polys:
-        intersection = cone2.intersection(cone)
         diff = cone2.difference(cone)
-        if diff.geom_type == 'Polygon':
-            diffcoords = diff.exterior.coords
-            if routerpt not in diffcoords:
-                differencepolys.append(diff)
-                differencepolyskvals.append(2)
+        diffcoords = diff.exterior.coords
+        if routerpt not in diffcoords:
+            intk2polys.append(diff)
+                
 
+k2diffpolys=[]
 for cone in differencepolys:
-    for cone2 in k3polys:
-        intersection = cone2.intersection(cone)
+    for cone2 in intk2polys:
         diff = cone2.difference(cone)
-        if diff.geom_type == 'Polygon':
-            diffcoords = diff.exterior.coords
-            if routerpt not in diffcoords:
-                differencepolys.append(diff)
-                differencepolyskvals.append(3)
-cone1 = differencepolys[3]
-cone2 = k2polys[0]
+        intersects=False
+        for cone3 in differencepolys:
+            if cone3.intersects(diff): intersects=True
+        if intersects == True: continue
+        if diff not in k2diffpolys:
+            k2diffpolys.append(diff)
 
+for poly in k2diffpolys:
+    differencepolys.append(poly)
+    differencepolyskvals.append(2)
+
+
+cone1=differencepolys[-1]
+cone2=k3polys[1]
+k3diffpolys=[]
+for cone in k0polys:
+    for cone2 in k3polys:
+        diff = cone2.difference(cone)
+        diffcoords = diff.exterior.coords
+        if routerpt not in diffcoords:
+            k3diffpolys.append(diff)
+            
+k3diffpolys2=[]        
+for cone in differencepolys:
+    for cone2 in k3diffpolys:
+        diff = cone2.difference(cone)
+        diffcoords = diff.exterior.coords
+        if diff not in k3diffpolys2:
+            intersects=False
+            for cone3 in differencepolys:
+                if cone3.intersects(diff) and cone3.intersection(diff).geom_type=='Polygon': intersects=True
+            if intersects == True: continue
+            k3diffpolys2.append(diff)            
+      
+        
+for poly in k3diffpolys2:
+    differencepolys.append(poly)
+    differencepolyskvals.append(3)    
+    
+for poly in k0polys:
+    differencepolys.append(poly)
+    differencepolyskvals.append(0)    
 ax2=plt.gca()
 ax2.set_xlim(8, 73)
 ax2.set_ylim(8, 73)
@@ -323,7 +354,7 @@ ax2.set_ylim(8, 73)
 for i in range(len(differencepolys)):
     poly = differencepolys[i]
     poly_kval = differencepolyskvals[i]
- #   if poly_kval != 3: continue
+    # if poly_kval != 3: continue #(for seeing if parts are intersecting/overlapping)
     colour = facecolors[poly_kval]
     kfill = PolygonPatch(poly,facecolor=colour)
     ax2.add_patch(kfill)    
