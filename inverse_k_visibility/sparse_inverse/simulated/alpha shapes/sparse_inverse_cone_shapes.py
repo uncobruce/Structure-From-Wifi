@@ -245,16 +245,16 @@ all_kval_polygons = [] # list of all polygons created, from k_n --> k0
 all_corresp_kvals = [] # corresp. k-values for every polygon created
 
 
-# Plot all cone shapes  (step 1)
+# # Plot all cone shapes  (step 1)
 for i in range(len(kvalues), -1, -1):
     kvalue = i 
     polygons, poly_k_vals = drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt)
     for poly in polygons:
-        kfill = PolygonPatch(poly,facecolor=facecolors[i])
-        ax.add_patch(kfill)    
+        # kfill = PolygonPatch(poly,facecolor=facecolors[i])
+        # ax.add_patch(kfill)    
         all_kval_polygons.append(poly)
         all_corresp_kvals.append(kvalue)
-
+        
 # Step 2. Remove all common parts k_1, ..., k_n polygons with all k_0 polygons
 # ---------------------------------------------------------------------------------
 def getConeShapesForKValue(kvalue, all_kval_polygons, all_corresp_kvals):
@@ -267,107 +267,67 @@ def getConeShapesForKValue(kvalue, all_kval_polygons, all_corresp_kvals):
     return coneshapeslist        
 
 k0polys = getConeShapesForKValue(0, all_kval_polygons, all_corresp_kvals)
+k1polys = getConeShapesForKValue(1, all_kval_polygons, all_corresp_kvals)
+k2polys = getConeShapesForKValue(2, all_kval_polygons, all_corresp_kvals)
+k3polys = getConeShapesForKValue(3, all_kval_polygons, all_corresp_kvals)
 
 # Create 2D array where every row is a list of kval polys w/corresp row index being k value
 coneshapes_sorted = [i for i in range(len(kvalues))] # initialization
 for i in range(len(kvalues)):
     coneshapes_sorted[i] = getConeShapesForKValue(i, all_kval_polygons, all_corresp_kvals)
 
-for i in range(0, len(coneshapes_sorted)):
-    if coneshapes_sorted[i] != []: currentkvalue_cones = coneshapes_sorted[i] # must remove all common k+1 cones with this set of polys
-    for cone in currentkvalue_cones: 
-        for j in range(i+1, len(coneshapes_sorted)-1):
-            print('CURRENT K VALUE: ', i, 'CHECKING ', j)
+differencepolys, differencepolyskvals =[], []
+
+# I should automate this but this is ok for now
+for cone in k0polys:
+    differencepolys.append(cone)
+    differencepolyskvals.append(0)
+    for cone2 in k1polys:
+        intersection = cone2.intersection(cone)
+        if intersection.geom_type == 'Polygon': 
+            print(intersection)
+            diff = cone2.difference(cone)
+            print(cone, cone2, "\n")
+            diffcoords = diff.exterior.coords
+            if routerpt not in diffcoords:
+                differencepolys.append(diff)
+                differencepolyskvals.append(1)
+
+for cone in differencepolys:
+    for cone2 in k2polys:
+        intersection = cone2.intersection(cone)
+        diff = cone2.difference(cone)
+        if diff.geom_type == 'Polygon':
+            diffcoords = diff.exterior.coords
+            if routerpt not in diffcoords:
+                differencepolys.append(diff)
+                differencepolyskvals.append(2)
+
+for cone in differencepolys:
+    for cone2 in k3polys:
+        intersection = cone2.intersection(cone)
+        diff = cone2.difference(cone)
+        if diff.geom_type == 'Polygon':
+            diffcoords = diff.exterior.coords
+            if routerpt not in diffcoords:
+                differencepolys.append(diff)
+                differencepolyskvals.append(3)
+cone1 = differencepolys[3]
+cone2 = k2polys[0]
+
+ax2=plt.gca()
+ax2.set_xlim(8, 73)
+ax2.set_ylim(8, 73)
+
+''' Plot intersection polygons for kvals: {1, ..., n}'''
+for i in range(len(differencepolys)):
+    poly = differencepolys[i]
+    poly_kval = differencepolyskvals[i]
+ #   if poly_kval != 3: continue
+    colour = facecolors[poly_kval]
+    kfill = PolygonPatch(poly,facecolor=colour)
+    ax2.add_patch(kfill)    
+plt.show()    
 
 
 
-
-# Step 3. Continue to remove all k_i+1, …, k_n common polygons for all k_i polygons 
-
-
-
-
-
-# # Remove common parts of cone shapes to refine every kval poly, from the perspective of k-vals to k-1 vals
-# difference_polys, difference_polys_kvals = [], []
-# for i in range(len(all_kval_polygons)):
-#     current_kval_poly = all_kval_polygons[i]
-#     current_kvalue = all_corresp_kvals[i]
-#     if current_kvalue == 0 : continue
-#     for j in range(len(all_kval_polygons)):
-#         next_kval_poly = all_kval_polygons[j]
-#         next_kvalue = all_corresp_kvals[j]
-#         if current_kval_poly == next_kval_poly or current_kvalue == next_kvalue: continue
-#         if next_kval_poly.intersects(current_kval_poly) and next_kval_poly.intersection(current_kval_poly).geom_type == 'Polygon':
-#             if next_kvalue < current_kvalue:
-#                 differencepoly = current_kval_poly.difference(next_kval_poly)
-#                 # print(differencepoly)
-#                 if differencepoly not in difference_polys:
-#                     difference_polys.append(differencepoly)
-#                     # print(differencepoly)
-#                     difference_polys_kvals.append(current_kvalue)
-# # difference_polys.reverse()
-# # difference_polys_kvals.reverse()
-# difference_polys_refined, difference_polys_refined_kvals = [], []
-
-
-# bigyellow = difference_polys[-1]
-# lilblue = difference_polys[-5]
-
-# # Further remove common parts of cone shapes to refine every kval poly, from the perspective of k-vals to k+1 vals
-# for i in range(len(difference_polys)):
-#     current_diff_poly = difference_polys[i]
-#     current_kvalue = difference_polys_kvals[i]
-#     for j in range(len(difference_polys)):
-#         next_diff_poly = difference_polys[j]
-#         next_kval = difference_polys_kvals[j]
-#         if current_kvalue == 0: continue
-#         if current_diff_poly == next_kval_poly or current_kvalue == next_kvalue: continue
-#         if current_diff_poly.intersects(next_diff_poly)  and next_diff_poly.intersection(current_diff_poly).geom_type == 'Polygon' and current_kvalue > next_kvalue:
-#             differencepoly = current_diff_poly.difference(next_diff_poly)
-#             print(differencepoly)
-#             if differencepoly.is_empty == False and differencepoly not in difference_polys_refined:
-#                 difference_polys_refined.append(differencepoly)
-#                 difference_polys_refined_kvals.append(current_kvalue)
-            
-# plt.show()
-
-# ax2=plt.gca()
-# ax2.set_xlim(8, 73)
-# ax2.set_ylim(8, 73)
-
-# ''' Plot intersection polygons for kvals: {1, ..., n}'''
-# for i in range(len(difference_polys_refined)):
-#     poly = difference_polys_refined[i]
-#     poly_kval = difference_polys_refined_kvals[i]
-#     if poly_kval != 2: continue
-#     colour = facecolors[poly_kval]
-#     kfill = PolygonPatch(poly,facecolor=colour)
-#     ax2.add_patch(kfill)    
-    
-# #k1 intersections with  k0
-# k0_coneshapes = [all_kval_polygons[i] for i in range(len(all_kval_polygons)) if all_corresp_kvals[i]==0]
-# k0_poly = k0_coneshapes[0]
-# k0_diffpolys_intersections=[]
-# for i in range(len(difference_polys)):
-#     diffpoly = difference_polys[i]
-#     if diffpoly.intersects(k0_poly) and difference_polys_kvals[i] == 1:
-#         k0_diffpolys_intersections.append(diffpoly)
-        
-# k1_1 = k0_diffpolys_intersections[2]
-
-# k1_1_coords = k1_1.exterior.coords
-
-# x_coords = []
-# k1_1_points = []
-# for coord in k1_1_coords:
-#     if coord[0] not in x_coords:
-#         x_coords.append(coord[0])
-#     k1_1_points.append((coord[0],coord[1]))
-# edge2edgedist = abs(max(x_coords)-min(x_coords))
-# centroid_k1_1 = k1_1.centroid.coords.xy
-# cent_x, cent_y = centroid_k1_1[0][0], centroid_k1_1[1][0]
-
-# # plt.plot([pt1[0],pt2[0]], [pt1[1],pt2[1]],linewidth='3.0',color='black')
-
-plt.show()
