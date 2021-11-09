@@ -280,13 +280,10 @@ differencepolys, differencepolyskvals =[], []
 
 # I should automate this but this is ok for now
 for cone in k0polys:
-
     for cone2 in k1polys:
         intersection = cone2.intersection(cone)
         if intersection.geom_type == 'Polygon': 
-            print(intersection)
             diff = cone2.difference(cone)
-            print(cone, cone2, "\n")
             diffcoords = diff.exterior.coords
             if routerpt not in diffcoords:
                 differencepolys.append(diff)
@@ -360,5 +357,7 @@ for i in range(len(differencepolys)):
     ax2.add_patch(kfill)    
 plt.show()    
 
-
+k1polys = getConeShapesForKValue(1, differencepolys, differencepolyskvals)
+k2polys = getConeShapesForKValue(2, differencepolys, differencepolyskvals)
+k3polys = getConeShapesForKValue(3, differencepolys, differencepolyskvals)
 
