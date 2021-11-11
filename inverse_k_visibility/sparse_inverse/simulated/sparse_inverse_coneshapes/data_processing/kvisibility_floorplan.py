@@ -6,14 +6,11 @@ import math
 from shapely.ops import polygonize
 from descartes import PolygonPatch
 from shapely.ops import cascaded_union
-import cv2
-from matplotlib import colors
-import random
+
 
 # Define floor map based on vertices2.py and plot
 contour = np.squeeze(vertices2.contours[0])
 poly = Polygon(contour)
-
 
 def removeClosePoints(points):
     points2 = points.copy()
