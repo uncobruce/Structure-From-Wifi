@@ -11,9 +11,15 @@ class mapInput:
         cv2.destroyAllWindows()
         
 # Initialize map input
-mapimg = cv2.imread("floorplans/testroom.png")
-map1 = mapInput(mapimg)
+map_img = cv2.imread("floorplans/testroom.png")
+map1 = mapInput(map_img)
 
 # Obtain map contours
-map_contour = drawcontours.Contour(mapimg)
+map_contour = drawcontours.Contour(map_img)
 map_contour.getContours()
+
+# Obtain k-visibility plot 
+
+# Obtain random trajectory
+
+# Associate k-values with trajectory coordinates
