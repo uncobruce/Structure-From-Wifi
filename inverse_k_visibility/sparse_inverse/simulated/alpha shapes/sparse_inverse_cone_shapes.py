@@ -9,6 +9,7 @@ import random_trajectory
 from shapely.ops import polygonize
 from shapely.ops import cascaded_union
 from descartes import PolygonPatch
+
 def imageToGrid(image, desired_height, desired_width, data):   
     # Return list of grid coordinates that match image of map 
     # -----------------------------------------------------------------------
@@ -79,6 +80,7 @@ def makeLinesFromPointsList(pointslist):
                 line = (pt1,pt2)
                 lineslist.append(line)
         return lineslist
+    
 def getkValCoordinates(trajectoryKValueDictionary, desiredKValue):
     # Given a k value, return all coordinates that match this k value
     kValCoordinates = []
@@ -98,6 +100,7 @@ def getKValueDictionary(trajectoryKValueDictionary):
     for coord in trajectoryKValueDictionary:
         k_val_dictionary[coord] = trajectoryKValueDictionary[coord]
     return  k_val_dictionary
+
 
 
 # Desired grid map dimensions   
@@ -134,9 +137,8 @@ trajectoryKValueDictionary = random_trajectory.pathandKVals
 plotKCoordinates(trajectoryCoordinates, testmap)
 
 # Separate k value coords into different lists
-k1vals = getkValCoordinates(trajectoryKValueDictionary, 1)
 k0vals = getkValCoordinates(trajectoryKValueDictionary, 0)
-
+k1vals = getkValCoordinates(trajectoryKValueDictionary, 1)
 k2vals = getkValCoordinates(trajectoryKValueDictionary, 2)
 k3vals = getkValCoordinates(trajectoryKValueDictionary, 3)
 k4vals = getkValCoordinates(trajectoryKValueDictionary, 4)
@@ -254,7 +256,7 @@ for i in range(len(kvalues), -1, -1):
         # ax.add_patch(kfill)    
         all_kval_polygons.append(poly)
         all_corresp_kvals.append(kvalue)
-        
+# plt.show()        
 # Step 2. Remove all common parts k_1, ..., k_n polygons with all k_0 polygons
 # ---------------------------------------------------------------------------------
 def getConeShapesForKValue(kvalue, all_kval_polygons, all_corresp_kvals):
@@ -301,12 +303,16 @@ k2diffpolys=[]
 for cone in differencepolys:
     for cone2 in intk2polys:
         diff = cone2.difference(cone)
-        intersects=False
-        for cone3 in differencepolys:
-            if cone3.intersects(diff): intersects=True
-        if intersects == True: continue
+        diffcoords = diff.exterior.coords
         if diff not in k2diffpolys:
-            k2diffpolys.append(diff)
+            intersects=False
+            for cone3 in differencepolys:
+                if cone3.intersects(diff) and cone3.intersection(diff).geom_type=='Polygon': intersects=True
+            for cone3 in k2diffpolys:
+                if cone3.intersects(diff) and cone3.intersection(diff).geom_type=='Polygon': intersects=True
+            
+            if intersects == True: continue
+            k2diffpolys.append(diff)      
 
 for poly in k2diffpolys:
     differencepolys.append(poly)
@@ -332,6 +338,10 @@ for cone in differencepolys:
             intersects=False
             for cone3 in differencepolys:
                 if cone3.intersects(diff) and cone3.intersection(diff).geom_type=='Polygon': intersects=True
+            for cone3 in k3diffpolys2:
+                if cone3.intersects(diff) and cone3.intersection(diff).geom_type=='Polygon': 
+                    same_kval_overlap = diff.difference(cone3)
+                    intersects=True
             if intersects == True: continue
             k3diffpolys2.append(diff)            
       
@@ -355,9 +365,41 @@ for i in range(len(differencepolys)):
     colour = facecolors[poly_kval]
     kfill = PolygonPatch(poly,facecolor=colour)
     ax2.add_patch(kfill)    
-plt.show()    
+ 
+
 
 k1polys = getConeShapesForKValue(1, differencepolys, differencepolyskvals)
 k2polys = getConeShapesForKValue(2, differencepolys, differencepolyskvals)
 k3polys = getConeShapesForKValue(3, differencepolys, differencepolyskvals)
 
+
+def slope(pt1, pt2):
+    x1, y1 = pt1[0], pt1[1]
+    x2, y2 = pt2[0], pt2[1]
+    try:
+        slope = (y2-y1)/(x2-x1)
+    except ZeroDivisionError:
+        slope = None
+    return slope
+
+k1k0intersections=[]
+for k0poly in k0polys:
+    for k1poly in k1polys:
+        intersection = k1poly.intersection(k0poly)
+        if (intersection.geom_type == 'LineString' or intersection.geom_type == 'MultiLineString'):
+            k1k0intersections.append(intersection)
+
+verticalk1k0lines = []
+for intersection in k1k0intersections:
+    if intersection.geom_type == 'LineString':
+        pt1, pt2 = intersection.coords[0], intersection.coords[1]
+        if slope(pt1,pt2) == None:
+            verticalk1k0lines.append((pt1,pt2))
+            plt.plot((pt1[0],pt2[0]),(pt1[1],pt2[1]), linewidth='2.0', color='cyan')
+    if intersection.geom_type == 'MultiLineString':
+        for line in intersection:
+           pt1, pt2 = line.coords[0], line.coords[1]
+           if slope(pt1,pt2) == None:
+               verticalk1k0lines.append((pt1,pt2))
+               plt.plot((pt1[0],pt2[0]),(pt1[1],pt2[1]), linewidth='2.0', color='cyan') 
+plt.show()           
