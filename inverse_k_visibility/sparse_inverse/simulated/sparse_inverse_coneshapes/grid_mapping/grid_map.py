@@ -1,3 +1,4 @@
+''' Initialize a gridmap and plot coordinates in a grid format.'''
 import numpy as np 
 
 class GridMap:

@@ -1,5 +1,7 @@
 import cv2
+import sys
 import data_processing.drawcontours as drawcontours
+import geometric_analysis.kvisibility_algorithm as kvisibility_algorithm
 
 class mapInput:
     def __init__(self, mapimage):
@@ -16,9 +18,11 @@ map1 = mapInput(map_img)
 
 # Obtain map contours
 map_contour = drawcontours.Contour(map_img)
-map_contour.getContours()
+contours = map_contour.getContours()
 
 # Obtain k-visibility plot 
+kvisibility_algorithm.plotKVisRegion(contours)
+
 
 # Obtain random trajectory
 
