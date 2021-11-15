@@ -534,5 +534,6 @@ def plotKVisRegion(contour_coordinates, borders=False, saveimage=True):
     
     # Plot k-visibility plot
     plt.show()
+    return (routerx,routery)
 
         
