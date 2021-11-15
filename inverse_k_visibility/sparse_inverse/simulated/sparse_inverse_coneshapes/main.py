@@ -38,4 +38,5 @@ trajectory_endpts_path = "random_trajectories/traj_1.txt"
 kvisplot_path = "data_processing/kvis_plot.png"
 trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path)
 trajectoryObject.obtainTrajectoryCoordinates()
+
 # =========================================================
