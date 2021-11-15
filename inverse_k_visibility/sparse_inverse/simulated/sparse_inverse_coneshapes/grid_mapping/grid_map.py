@@ -1,9 +1,9 @@
 ''' Initialize a gridmap and plot coordinates in a grid format.'''
 import numpy as np 
 import cv2
-
+import matplotlib.pyplot as plt
 class GridMap:
-    def __init__(self, refined_polygons_list, trajectory_object, desired_height=80, desired_width=80):
+    def __init__(self, desired_height=80, desired_width=80):
         self.gridmap = np.zeros(desired_width*desired_height)
         self.gridmap = self.gridmap.reshape((desired_width, desired_height))
         self.gridmap[self.gridmap == 0] = 0.5
@@ -20,11 +20,11 @@ class GridMap:
         # Resize input to "pixelated" size
         temp = cv2.resize(ground_truth_image, (w, h), interpolation=cv2.INTER_LINEAR)
         # Initialize output image
-        output = cv2.resize(temp, (self.desired_width, self.desired_height), interpolation=cv2.INTER_NEAREST)
+        output = cv2.resize(temp, (self.desired_width-10, self.desired_height-10), interpolation=cv2.INTER_NEAREST)
         # Obtain coordinates of map points in image
         mapCoordinates = []
-        for i in range(self.desired_height):
-            for j in range(self.desired_width):
+        for i in range(self.desired_height-10):
+            for j in range(self.desired_width-10):
                 pixel = output[i][j]
                 if pixel[0] != 255:
                     output[i][j][0], output[i][j][1], output[i][j][2] = 0,0,0
@@ -35,10 +35,18 @@ class GridMap:
         for coords in mapCoordinates:
             mapx, mapy = coords[0],coords[1]
             self.gridmap[mapy-5][mapx+5] = 1
+        self.plotGrid()
         return self.gridmap
     
+    def plotGrid(self):  
+        fig, ax = plt.subplots()
+        ax.imshow(self.gridmap, cmap="Greys",origin="lower", vmax=1)
+        ax.set_xticks(np.arange(self.desired_height+1)-0.5, minor=True)
+        ax.set_yticks(np.arange(self.desired_width+1)-0.5, minor=True)
+        ax.grid(which="minor")
+        ax.tick_params(which="minor", size=0)
+        plt.show()  
     
     
-    
-    def plotTrajectory():
+    def plotTrajectory(self, trajectory_object):
         pass

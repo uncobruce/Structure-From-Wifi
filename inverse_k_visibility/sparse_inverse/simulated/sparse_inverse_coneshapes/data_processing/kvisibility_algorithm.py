@@ -7,7 +7,7 @@ from descartes import PolygonPatch
 from shapely.ops import cascaded_union
 
 ''' Given contour coordinates, plot k-visibility region.'''
-def plotKVisRegion(contour_coordinates, borders=False, saveimage=True):
+def plotKVisRegion(contour_coordinates, showPlot, showBorders=False, saveImage=True):
     # Define floor map based on vertices2.py and plot
     contour = np.squeeze(contour_coordinates)
     poly = Polygon(contour)
@@ -28,8 +28,7 @@ def plotKVisRegion(contour_coordinates, borders=False, saveimage=True):
     xcoords, ycoords = coords2[:,0], coords2[:,1]
     xmin, xmax = min(xcoords), max(xcoords)
     ymin, ymax = min(ycoords), max(ycoords)
-    plt.xlim(xmin - 90, xmax + 90)
-    plt.ylim(ymin - 90, ymax+90)
+    
     
     
     # Define bounding box poly
@@ -502,38 +501,42 @@ def plotKVisRegion(contour_coordinates, borders=False, saveimage=True):
     
     facecolors=['red','yellow','blue','green','orange', 'magenta', 'navy', 'teal', 'tan', 'lightsalmon','lightyellow','coral','rosybrown']
     
-
-    ax=plt.gca()
     
-    for j in range(len(bbox_segmentLinesDict),0,-1):
-        kvalue=j 
-        kregion_bbox=getBBoxKRegion(j, bboxpts, bbox_segmentLinesDict,routerpt)
-        kfill_bbox = PolygonPatch(kregion_bbox,facecolor=facecolors[j], edgecolor='None')
-        ax.add_patch(kfill_bbox)
-    
-    
-    for j in range(len(segmentLinesDict)-1,-1,-1):
-        kvalue=j
-       
-        for i in range(kvalue, -1,-1):
-            
-            kregion=getKRegion(j,kvalue, coordinates, segmentLinesDict,routerpt)
-            kfill = PolygonPatch(kregion,facecolor=facecolors[j], edgecolor='None')
-            ax.add_patch(kfill)
+    if showPlot == True: # must set showPlot to True at least once for image to save in directory
+        plt.xlim(xmin - 90, xmax + 90)
+        plt.ylim(ymin - 90, ymax+90)
+        ax=plt.gca()
         
-    if borders == True: # Plot showing walls and router pt location
-        plt.plot(*poly.exterior.xy,'k')
-        plt.plot(routerx,routery, 'ko')    
+        for j in range(len(bbox_segmentLinesDict),0,-1):
+            kvalue=j 
+            kregion_bbox=getBBoxKRegion(j, bboxpts, bbox_segmentLinesDict,routerpt)
+            kfill_bbox = PolygonPatch(kregion_bbox,facecolor=facecolors[j], edgecolor='None')
+            ax.add_patch(kfill_bbox)
+        
+        
+        for j in range(len(segmentLinesDict)-1,-1,-1):
+            kvalue=j
+           
+            for i in range(kvalue, -1,-1):
+                
+                kregion=getKRegion(j,kvalue, coordinates, segmentLinesDict,routerpt)
+                kfill = PolygonPatch(kregion,facecolor=facecolors[j], edgecolor='None')
+                ax.add_patch(kfill)
+        
+            
+        if saveImage == True: # Save image without borders
+            plt.gca().set_axis_off()
+            plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
+                        hspace = 0, wspace = 0)
+            plt.margins(0,0)
+            plt.savefig('data_processing/kvis_plot.png')
+        
+        if showBorders == True: # Plot showing walls and router pt location
+            plt.plot(*poly.exterior.xy,'k')
+            plt.plot(routerx,routery, 'ko')    
     
-    if saveimage == True: # Save image without borders
-        plt.gca().set_axis_off()
-        plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
-                    hspace = 0, wspace = 0)
-        plt.margins(0,0)
-        plt.savefig('data_processing/kvis_plot.png')
     
-    # Plot k-visibility plot
-    plt.show()
+   
     return (routerx,routery)
 
         

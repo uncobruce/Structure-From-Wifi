@@ -3,7 +3,7 @@ import sys
 import data_processing.drawcontours as drawcontours
 import data_processing.kvisibility_algorithm as kvisibility_algorithm
 import grid_mapping.grid_map as grid_map
-
+import data_processing.associate_traj_kvals as associate_traj_kvals
 class mapInput:
     def __init__(self, mapimage):
         self.mapimage = mapimage
@@ -26,14 +26,16 @@ contours = map_contour.getContours()
 
 
 # Obtain k-visibility plot and router point
-routerpoint = kvisibility_algorithm.plotKVisRegion(contours)
+routerpoint = kvisibility_algorithm.plotKVisRegion(contours, showPlot=False)
 
 
 # Initialize grid map
 gridWidth, gridHeight = 80, 80
-gridMap = grid_map.GridMap([], None)
-gridMap.plotFloorplanGroundTruth(map_img)
+gridMap = grid_map.GridMap()
+
 # Obtain traj-kvals data object scaled to gridmap
-
-
+trajectory_endpts_path = "random_trajectories/traj_1.txt" 
+kvisplot_path = "data_processing/kvis_plot.png"
+trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path)
+trajectoryObject.obtainTrajectoryCoordinates()
 # =========================================================
