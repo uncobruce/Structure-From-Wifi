@@ -4,6 +4,8 @@ import data_processing.drawcontours as drawcontours
 import data_processing.kvisibility_algorithm as kvisibility_algorithm
 import grid_mapping.grid_map as grid_map
 import data_processing.associate_traj_kvals as associate_traj_kvals
+import geometric_analysis.coneshapes as coneshapes
+
 class mapInput:
     def __init__(self, mapimage):
         self.mapimage = mapimage
@@ -40,5 +42,11 @@ kvis_gridmap = gridMap.plotKVisibilityMap(kvisibility_map_image, showPlot=False)
 trajectory_endpts_path = "random_trajectories/traj_1.txt" 
 kvisplot_path = "data_processing/kvis_plot.png"
 trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path, gridWidth, gridHeight,routerpoint, unscaled_axis_limits, kvaluescolordict, kvis_gridmap)
-traj_object = trajectoryObject.getTrajectoryKValuesObject()
+trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
 # =========================================================
+
+# Phase II: obtaining refined cone shapes
+# =========================================================
+# Plot trajectory on grid map
+gridMap.plotTrajectory(trajectory_kvalues)
+coneshapes.getRefinedConeShapes(trajectory_kvalues, gridWidth, gridHeight)

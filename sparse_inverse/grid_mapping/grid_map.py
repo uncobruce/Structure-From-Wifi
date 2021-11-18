@@ -67,5 +67,11 @@ class GridMap:
             self.plotGrid(self.kvisgridmap)
         return self.kvisgridmap
     
-    def plotTrajectory(self, trajectory_object):
-        pass
+    def plotTrajectory(self, trajectory_kvalues):
+        trajectoryCoordinates = list(trajectory_kvalues[0].keys())
+        for coord in trajectoryCoordinates:
+            coordx, coordy = coord[0], coord[1]
+            self.gridmap[coordy][coordx] = 0
+        routerCoordinates = trajectory_kvalues[1]
+        self.gridmap[routerCoordinates[1]][routerCoordinates[0]]
+        self.plotGrid(self.gridmap)
