@@ -16,8 +16,3 @@ A method for geometrically mapping an environment using WiFi, based on a novel "
    * grid_mapping 
      * ```grid_map.py```: plot gridmap with trajectory, apply probabilistic model to estimate wall locations in grid map
     * ```main.py```: for running main program 
-
-   
-* inverse_k_visibility: novel algorithm which is used to obtain a map of the environment. This is tested by simulation and experimentally.
-  * full_inverse: solves the problem when given a full k-visibility colour-map to obtain the 2D map. 
-  * sparse_inverse: solves the problem when given sparse k-value inputs to obtain a partial map. 
