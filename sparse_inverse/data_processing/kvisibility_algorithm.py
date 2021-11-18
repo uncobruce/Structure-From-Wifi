@@ -537,6 +537,6 @@ def plotKVisRegion(contour_coordinates, showPlot, showBorders=False, saveImage=T
     
     
    
-    return (routerx,routery)
+    return (routerx,routery), (xmax, ymax)
 
         

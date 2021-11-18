@@ -26,8 +26,8 @@ contours = map_contour.getContours()
 
 
 # Obtain k-visibility plot and router point
-routerpoint = kvisibility_algorithm.plotKVisRegion(contours, showPlot=False)
-
+routerpoint, axis_limits = kvisibility_algorithm.plotKVisRegion(contours, showPlot=False)
+kvisibility_map_image = cv2.imread('data_processing/kvis_plot.png')
 
 # Initialize grid map
 gridWidth, gridHeight = 80, 80
@@ -36,7 +36,9 @@ gridMap = grid_map.GridMap()
 # Obtain traj-kvals data object scaled to gridmap
 trajectory_endpts_path = "random_trajectories/traj_1.txt" 
 kvisplot_path = "data_processing/kvis_plot.png"
-trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path)
+trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path, gridWidth, gridHeight,routerpoint, axis_limits)
 trajectoryObject.obtainTrajectoryCoordinates()
 
+a=gridMap.plotKVisibilityMap(kvisibility_map_image)
+gridMap.plotGrid(a)
 # =========================================================

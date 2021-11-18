@@ -2,6 +2,7 @@
 import numpy as np 
 import cv2
 import matplotlib.pyplot as plt
+from matplotlib import colors
 class GridMap:
     def __init__(self, desired_height=80, desired_width=80):
         self.gridmap = np.zeros(desired_width*desired_height)
@@ -35,18 +36,35 @@ class GridMap:
         for coords in mapCoordinates:
             mapx, mapy = coords[0],coords[1]
             self.gridmap[mapy-5][mapx+5] = 1
-        self.plotGrid()
+        self.plotGrid(self.gridmap)
         return self.gridmap
     
-    def plotGrid(self):  
+    def plotGrid(self, gridmap):  
         fig, ax = plt.subplots()
-        ax.imshow(self.gridmap, cmap="Greys",origin="lower", vmax=1)
+        ax.imshow(gridmap, cmap="Greys",origin="lower", vmax=1)
         ax.set_xticks(np.arange(self.desired_height+1)-0.5, minor=True)
         ax.set_yticks(np.arange(self.desired_width+1)-0.5, minor=True)
         ax.grid(which="minor")
         ax.tick_params(which="minor", size=0)
         plt.show()  
     
+    
+    def plotKVisibilityMap(self, kvismap):
+        # Get input size
+        height, width = kvismap.shape[:2]     
+        # Desired "pixelated" size
+        w, h = (self.desired_width, self.desired_height)      
+        # Resize input to "pixelated" size
+        temp = cv2.resize(kvismap, (w, h), interpolation=cv2.INTER_LINEAR)
+        nrows, ncols, c = temp.shape # c is channel
+        
+        self.kvisgridmap = [[0 for x in range(nrows)] for y in range(ncols)]  
+        for i in range(nrows):
+            for j in range(ncols):
+                b,g,r = (temp[i,j])
+                self.kvisgridmap[-i][j] = (r,g,b)
+        self.plotGrid(self.kvisgridmap)
+        return self.kvisgridmap
     
     def plotTrajectory(self, trajectory_object):
         pass
