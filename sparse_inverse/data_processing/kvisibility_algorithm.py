@@ -5,9 +5,9 @@ import math
 from shapely.ops import polygonize
 from descartes import PolygonPatch
 from shapely.ops import cascaded_union
-
+from matplotlib import colors as colors
 ''' Given contour coordinates, plot k-visibility region.'''
-def plotKVisRegion(contour_coordinates, showPlot, showBorders=False, saveImage=True):
+def plotKVisRegion(contour_coordinates, showPlot=True, showBorders=False, saveImage=True):
     # Define floor map based on vertices2.py and plot
     contour = np.squeeze(contour_coordinates)
     poly = Polygon(contour)
@@ -500,8 +500,15 @@ def plotKVisRegion(contour_coordinates, showPlot, showBorders=False, saveImage=T
         return polygon_final
     
     facecolors=['red','yellow','blue','green','orange', 'magenta', 'navy', 'teal', 'tan', 'lightsalmon','lightyellow','coral','rosybrown']
-    
-    
+    kvaluescolordict={} # obtain kvalue: rgb val pairs
+    for j in range(len(segmentLinesDict)-1,-1,-1):
+        kvalue=j      
+        for i in range(kvalue, -1,-1):
+            if facecolors[j] not in kvaluescolordict:
+                associated_rgba_value = colors.to_rgb(facecolors[j])
+                color = (associated_rgba_value[0]*255, associated_rgba_value[1]*255, associated_rgba_value[2]*255)
+                kvaluescolordict[color] = j
+                
     if showPlot == True: # must set showPlot to True at least once for image to save in directory
         plt.xlim(xmin - 90, xmax + 90)
         plt.ylim(ymin - 90, ymax+90)
@@ -513,14 +520,17 @@ def plotKVisRegion(contour_coordinates, showPlot, showBorders=False, saveImage=T
             kfill_bbox = PolygonPatch(kregion_bbox,facecolor=facecolors[j], edgecolor='None')
             ax.add_patch(kfill_bbox)
         
-        
+       
         for j in range(len(segmentLinesDict)-1,-1,-1):
             kvalue=j
            
             for i in range(kvalue, -1,-1):
-                
                 kregion=getKRegion(j,kvalue, coordinates, segmentLinesDict,routerpt)
                 kfill = PolygonPatch(kregion,facecolor=facecolors[j], edgecolor='None')
+                if facecolors[j] not in kvaluescolordict:
+                    associated_rgba_value = colors.to_rgb(facecolors[j])
+                    color = (associated_rgba_value[0]*255, associated_rgba_value[1]*255, associated_rgba_value[2]*255)
+                    kvaluescolordict[color] = j
                 ax.add_patch(kfill)
         
             
@@ -535,8 +545,9 @@ def plotKVisRegion(contour_coordinates, showPlot, showBorders=False, saveImage=T
             plt.plot(*poly.exterior.xy,'k')
             plt.plot(routerx,routery, 'ko')    
     
-    
+        
+     
+            
    
-    return (routerx,routery), (xmax, ymax)
-
+    return (routerx,routery), (xmax, ymax), kvaluescolordict
         

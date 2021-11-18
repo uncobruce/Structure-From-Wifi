@@ -49,7 +49,7 @@ class GridMap:
         plt.show()  
     
     
-    def plotKVisibilityMap(self, kvismap):
+    def plotKVisibilityMap(self, kvismap, showPlot=True):
         # Get input size
         height, width = kvismap.shape[:2]     
         # Desired "pixelated" size
@@ -63,7 +63,8 @@ class GridMap:
             for j in range(ncols):
                 b,g,r = (temp[i,j])
                 self.kvisgridmap[-i][j] = (r,g,b)
-        self.plotGrid(self.kvisgridmap)
+        if showPlot == True:
+            self.plotGrid(self.kvisgridmap)
         return self.kvisgridmap
     
     def plotTrajectory(self, trajectory_object):
