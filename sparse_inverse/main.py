@@ -29,6 +29,7 @@ contours = map_contour.getContours()
 
 # Obtain k-visibility plot and router point
 routerpoint, unscaled_axis_limits, kvaluescolordict = kvisibility_algorithm.plotKVisRegion(contours, showPlot=False)
+facecolors=['red','yellow','blue','green','orange', 'magenta', 'navy', 'teal', 'tan', 'lightsalmon','lightyellow','coral','rosybrown']
 kvisibility_map_image = cv2.imread('data_processing/kvis_plot.png')
 
 # Initialize grid map
@@ -37,6 +38,8 @@ gridMap = grid_map.GridMap()
 
 # Obtain k-visibility gridmap
 kvis_gridmap = gridMap.plotKVisibilityMap(kvisibility_map_image, showPlot=False)
+
+
 
 # Obtain traj-kvals data object scaled to gridmap
 trajectory_endpts_path = "random_trajectories/traj_1.txt" 
@@ -47,6 +50,13 @@ trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
 
 # Phase II: obtaining refined cone shapes
 # =========================================================
-# Plot trajectory on grid map
+# Plot trajectory and ground truth on grid map
+# gridMap.plotFloorplanGroundTruth(map_img)
+gridMap.plotGrid(kvis_gridmap)
 gridMap.plotTrajectory(trajectory_kvalues)
-coneshapes.getRefinedConeShapes(trajectory_kvalues, gridWidth, gridHeight)
+
+
+coneshapes_gridmap, rgb = coneshapes.getRefinedConeShapes(trajectory_kvalues, gridWidth, gridHeight, facecolors, kvaluescolordict)
+# gridMap.plotGrid(coneshapes_gridmap)
+a = kvis_gridmap[1][0]
+kvis_gridmap[1][0] = (255,255,255)

@@ -3,10 +3,12 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Point, Polygon, MultiPoint
 from shapely.ops import polygonize
 from shapely.ops import cascaded_union
+from descartes import PolygonPatch
 
-def getRefinedConeShapes(trajectory_kvalues, grid_width, grid_height):
+def getRefinedConeShapes(trajectory_kvalues, grid_width, grid_height, facecolors, kvaluescolordict):
     trajectoryKValueDictionary = trajectory_kvalues[0]
     trajectoryCoordinates = list(trajectoryKValueDictionary.keys())
+    trajectoryKValues = list(trajectoryKValueDictionary.values())
     routerCoords = trajectory_kvalues[1]
     
     # Create a dictionary of every coordinate and its k value
@@ -20,7 +22,13 @@ def getRefinedConeShapes(trajectory_kvalues, grid_width, grid_height):
             k_val_dictionary[coord] = trajectoryKValueDictionary[coord]
         return  k_val_dictionary
     
-    # Seperate trajectory into different segments based on if they are continuous and have same kval
+    k_val_dictionary = getKValueDictionary(trajectoryKValueDictionary)
+    kvalues = list(dict.fromkeys(trajectoryKValues))
+    kvalues.sort()
+    
+    # ================================================================================================
+    # Separate trajectory into different segments based on if they are continuous and have same kval    
+    # ================================================================================================
     trajectorySegmentsList = []
     i=0
     coordinates_count=0
@@ -36,12 +44,16 @@ def getRefinedConeShapes(trajectory_kvalues, grid_width, grid_height):
             coordinates_count+=1
             currentKValue = trajectoryKValueDictionary[coord]
             i+=1
-        trajectorySegmentsList.append(singleSegmentList)
-        
+        trajectorySegmentsList.append(singleSegmentList)        
         comparisonKValue = currentKValue
-    k_val_dictionary = getKValueDictionary(trajectoryKValueDictionary)
-
     assert coordinates_count == len(trajectoryCoordinates), "Total number of coordinates in array [trajectorySegmentsList] must equal number of coordinates in array [trajectoryCoordinates]"
+    
+    # =============================================================================
+    # Create dict of kvalue: associated cone-shapes     
+    # =============================================================================
+    coneShapesDict={}
+    for k in kvalues:
+        coneShapesDict[k] = []
     
     def getCornersofSegment(segment):
         ''' 
@@ -88,14 +100,12 @@ def getRefinedConeShapes(trajectory_kvalues, grid_width, grid_height):
         polygon_final = cascaded_union(kregioncones)
         return polygon_final
 
-
     def drawPolygonsForKValue(kvalue, trajectorySegmentsList, k_val_dictionary, routerpt):
         ''' 
         Identify all segments given a certain k-value,
         and create all cone shape Polygon objects corresponding to each segment
         '''
         segmentstoDraw = []
-        poly_k_vals=[]
         for segment in trajectorySegmentsList:
             segment_kvalue = k_val_dictionary[(segment[1][0], segment[1][1])] #first pt k value is seg kval
             if segment_kvalue == kvalue:
@@ -105,5 +115,45 @@ def getRefinedConeShapes(trajectory_kvalues, grid_width, grid_height):
             polygon = drawKValueCone(segment, routerpt)
             if polygon.geom_type == 'Polygon': # Some polys are recorded as Empty geometry collections
                 polygons.append(polygon)
-                poly_k_vals.append(kvalue)
-        return polygons, poly_k_vals
+        return polygons    
+    
+    ax=plt.gca()
+    ax.set_xlim(5, grid_width-5)
+    ax.set_ylim(5, grid_height-5)
+    kvalues.reverse()
+    
+    for k in kvalues:
+        polygons= drawPolygonsForKValue(k, trajectorySegmentsList, k_val_dictionary, routerCoords)
+        for poly in polygons:
+            kfill = PolygonPatch(poly,facecolor=facecolors[k])
+            ax.add_patch(kfill)    
+            coneShapesDict[k].append(poly)
+    plt.show() 
+    def coordinateInConeShape(coordinate, coneshapesDict):
+        ''' Given a gridmap coordinate, determine if it falls within a cone shape,
+            return corresp. kval if true, False if false'''
+        for k in coneShapesDict:
+            polygons = coneShapesDict[k]
+            for polygon in polygons:
+                if polygon.contains(Point(coordinate)):
+                    return k        
+        return False
+    
+    def getRGBFromKValue(kvalue, kvaluescolordict):
+        for rgb in kvaluescolordict:
+            if kvaluescolordict[rgb] == kvalue:
+                return rgb
+        
+    gridmap = [[0 for x in range(grid_height)] for y in range(grid_width)]  
+    for i in range(len(gridmap)):
+        for j in range(len(gridmap[0])):
+            coordinate = (j,i)
+            kvalue = coordinateInConeShape(coordinate, coneShapesDict)
+            if kvalue != False:
+                rgb = getRGBFromKValue(kvalue, kvaluescolordict)
+                gridmap[i][j] = rgb
+            else:
+                gridmap[i][j] = 0.5
+    return gridmap,rgb
+            
+            
