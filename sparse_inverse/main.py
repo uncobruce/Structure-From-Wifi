@@ -40,7 +40,6 @@ gridMap = grid_map.GridMap()
 kvis_gridmap = gridMap.plotKVisibilityMap(kvisibility_map_image, showPlot=False)
 
 
-
 # Obtain traj-kvals data object scaled to gridmap
 trajectory_endpts_path = "random_trajectories/traj_1.txt" 
 kvisplot_path = "data_processing/kvis_plot.png"
@@ -51,12 +50,11 @@ trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
 # Phase II: obtaining refined cone shapes
 # =========================================================
 # Plot trajectory and ground truth on grid map
-# gridMap.plotFloorplanGroundTruth(map_img)
+gridMap.plotFloorplanGroundTruth(map_img)
 gridMap.plotGrid(kvis_gridmap)
 gridMap.plotTrajectory(trajectory_kvalues)
 
 
 coneshapes_gridmap, rgb = coneshapes.getRefinedConeShapes(trajectory_kvalues, gridWidth, gridHeight, facecolors, kvaluescolordict)
-# gridMap.plotGrid(coneshapes_gridmap)
 a = kvis_gridmap[1][0]
 kvis_gridmap[1][0] = (255,255,255)
