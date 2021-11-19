@@ -20,7 +20,6 @@ class Floorplan:
     def getAxisLimits(self):
         polygon_coordinates = np.array(list(self.floorplanPolygon.exterior.coords))
         xmin, xmax, ymin, ymax = min(polygon_coordinates[:,0]), max(polygon_coordinates[:,0]), min(polygon_coordinates[:,1]), max(polygon_coordinates[:,1])
-        print(f"xmin: {xmin}, xmax: {xmax}, ymin: {ymin} ymax: {ymax}")
         return ((xmin, xmax), (ymin,ymax))
     
 # Part 1: Obtaining trajectory-kvals-routerpt object
@@ -28,8 +27,6 @@ class Floorplan:
 # Initialize floorplan input
 floorplan_img_path = "floorplans/testroom.png"
 floorplan = Floorplan(floorplan_img_path)
-print(floorplan.getMapContour())
-print(floorplan.getAxisLimits())
 
 # Obtain map contours
 #map_contour = np.array(drawcontours.contours(floorplan))
