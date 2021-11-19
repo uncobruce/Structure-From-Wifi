@@ -6,9 +6,19 @@ from shapely.ops import polygonize
 from descartes import PolygonPatch
 from shapely.ops import cascaded_union
 from matplotlib import colors as colors
+
+''' Create a k-visibility plot given a contour of the floorplan'''
+
+class kVisibilityPlot:
+   def __init__(self, contour_coordinates, floorplan_axes_limits):
+       self.contour_coordinates = contour_coordinates
+       self.floorplan_polygon = Polygon(contour_coordinates)
+
+
+
+
 ''' Given contour coordinates, plot k-visibility region.'''
 def plotKVisRegion(contour_coordinates, showPlot=True, showBorders=False, saveImage=True):
-    # Define floor map based on vertices2.py and plot
     contour = np.squeeze(contour_coordinates)
     poly = Polygon(contour)
     
@@ -28,7 +38,7 @@ def plotKVisRegion(contour_coordinates, showPlot=True, showBorders=False, saveIm
     xcoords, ycoords = coords2[:,0], coords2[:,1]
     xmin, xmax = min(xcoords), max(xcoords)
     ymin, ymax = min(ycoords), max(ycoords)
-    
+    print(f"xmin: {xmin}, xmax: {xmax}, ymin: {ymin} ymax: {ymax}")
     
     
     # Define bounding box poly
