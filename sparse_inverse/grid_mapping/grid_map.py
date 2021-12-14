@@ -11,7 +11,7 @@ class GridMap:
         self.desired_height, self.desired_width = desired_height, desired_width
         
 
-    def plotFloorplanGroundTruth(self, ground_truth_image, showPlot=True):
+    def plotFloorplanGroundTruth(self, ground_truth_image):
         ''' Draw ground truth map scaled to desired grid size. 
             Cell colour = 1: wall; Cell colour = 0: free space'''
         # Get input size
@@ -36,8 +36,7 @@ class GridMap:
         for coords in mapCoordinates:
             mapx, mapy = coords[0],coords[1]
             self.gridmap[mapy-5][mapx+5] = 1
-        if showPlot == True:
-            self.plotGrid(self.gridmap)
+        self.plotGrid(self.gridmap)
         return self.gridmap
     
     def plotGrid(self, gridmap):  

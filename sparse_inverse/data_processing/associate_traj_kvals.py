@@ -42,11 +42,12 @@ class trajectoryObject:
     
         
     def obtainTrajectoryKValues(self):
-        def nearestcolor(color, colorslist):
+        def nearestcolor(color, colorslist): # TODO use colors in front or behind instead, make sure they match
             r, g, b = color[0], color[1], color[2]
+            
             smallest_distance, closest_color = 0, None
             for other_color in colorslist:
-                r2, g2, b2 = other_color[0], other_color[1], other_color[2]
+                r2, g2, b2 = int(other_color[0]), int(other_color[1]),int( other_color[2]) #conv to int to avoid runtime warning
                 distance = abs(r2 - r) + abs(g2 - g) + abs(b2 - b)
                 if distance < smallest_distance or closest_color == None:
                     smallest_distance = distance
@@ -54,15 +55,20 @@ class trajectoryObject:
             return closest_color
         
         self.trajectory_kvalues_dict = {}
+        colorsUsedSoFar = [] 
         for point in self.trajectoryCoordinates:
-            correspKValColor = self.kvis_gridmap[point[1]][point[0]]         
+            correspKValColor = self.kvis_gridmap[point[1]][point[0]]  
+            
             if correspKValColor in self.kvaluescolordict.keys():
                 correspKValue = self.kvaluescolordict[correspKValColor]
                 self.trajectory_kvalues_dict[point] = correspKValue
+                if correspKValColor not in colorsUsedSoFar: # using colorsUsedSoFar so that k value which doesnt exist in map isnt accidentally chosen
+                    colorsUsedSoFar.append(correspKValColor)
             else: # if point colour not found, find the closest colour for it
-                nextcolor = nearestcolor(correspKValColor, self.kvaluescolordict.keys())
+                nextcolor = nearestcolor(correspKValColor, colorsUsedSoFar)
                 correspKValue = self.kvaluescolordict[nextcolor]
-                self.trajectory_kvalues_dict[point] = correspKValue
+          
+                self.trajectory_kvalues_dict[point] = correspKValue 
     
     def getTrajectoryKValuesObject(self):
         self.obtainTrajectoryCoordinates()

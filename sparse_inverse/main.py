@@ -5,7 +5,7 @@ import data_processing.drawcontours as drawcontours
 import data_processing.kvisibility_algorithm as kvisibility_algorithm
 import grid_mapping.grid_map as grid_map
 import data_processing.associate_traj_kvals as associate_traj_kvals
-import geometric_analysis.coneshapes as coneshapes
+import geometric_analysis.coneshapes_grid as coneshapes
 
 class Floorplan:
     def __init__(self, floorplan_img_path):
@@ -24,7 +24,7 @@ class Floorplan:
     
 
     
-# Part 1: Obtaining trajectory-kvals-routerpt object
+# Part 1: Data Processing and Initialization
 # =========================================================
 # Initialize floorplan input
 floorplan_img_path = "floorplans/testroom.png"
@@ -55,16 +55,11 @@ trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path,
 trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
 
 # Plot trajectory and ground truth on grid map
-gridMap.plotFloorplanGroundTruth(floorplan.image, showPlot=False)
+gridMap.plotFloorplanGroundTruth(floorplan.image)
 gridMap.plotGrid(kvis_gridmap)
 gridMap.plotTrajectory(trajectory_kvalues)
 
 
-# Phase II: obtaining refined cone shapes
+# Phase II: Geometric Analysis
 # =========================================================
-
-
-
-# coneshapes_gridmap, rgb = coneshapes.getRefinedConeShapes(trajectory_kvalues, gridWidth, gridHeight, facecolors, kvaluescolordict)
-# a = kvis_gridmap[1][0]
-# kvis_gridmap[1][0] = (255,255,255)
+cont_segments = coneshapes.continuousSegments(trajectory_kvalues)
