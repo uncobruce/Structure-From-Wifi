@@ -34,14 +34,34 @@ class trajectoryObject:
         for line in linestoplot:
             for point in line:
                 self.trajectoryCoordinates.append(point)
+        
+        self.trajectoryCoordinates = list(dict.fromkeys(self.trajectoryCoordinates))
+        # print(self.trajectoryCoordinates)
         return self.trajectoryCoordinates
+    
+    
         
     def obtainTrajectoryKValues(self):
+        def nearestcolor(color, colorslist):
+            r, g, b = color[0], color[1], color[2]
+            smallest_distance, closest_color = 0, None
+            for other_color in colorslist:
+                r2, g2, b2 = other_color[0], other_color[1], other_color[2]
+                distance = abs(r2 - r) + abs(g2 - g) + abs(b2 - b)
+                if distance < smallest_distance or closest_color == None:
+                    smallest_distance = distance
+                    closest_color = other_color
+            return closest_color
+        
         self.trajectory_kvalues_dict = {}
         for point in self.trajectoryCoordinates:
-            correspKValColor = self.kvis_gridmap[point[1]][point[0]]
+            correspKValColor = self.kvis_gridmap[point[1]][point[0]]         
             if correspKValColor in self.kvaluescolordict.keys():
                 correspKValue = self.kvaluescolordict[correspKValColor]
+                self.trajectory_kvalues_dict[point] = correspKValue
+            else: # if point colour not found, find the closest colour for it
+                nextcolor = nearestcolor(correspKValColor, self.kvaluescolordict.keys())
+                correspKValue = self.kvaluescolordict[nextcolor]
                 self.trajectory_kvalues_dict[point] = correspKValue
     
     def getTrajectoryKValuesObject(self):

@@ -11,7 +11,7 @@ class GridMap:
         self.desired_height, self.desired_width = desired_height, desired_width
         
 
-    def plotFloorplanGroundTruth(self, ground_truth_image):
+    def plotFloorplanGroundTruth(self, ground_truth_image, showPlot=True):
         ''' Draw ground truth map scaled to desired grid size. 
             Cell colour = 1: wall; Cell colour = 0: free space'''
         # Get input size
@@ -36,7 +36,8 @@ class GridMap:
         for coords in mapCoordinates:
             mapx, mapy = coords[0],coords[1]
             self.gridmap[mapy-5][mapx+5] = 1
-        self.plotGrid(self.gridmap)
+        if showPlot == True:
+            self.plotGrid(self.gridmap)
         return self.gridmap
     
     def plotGrid(self, gridmap):  
@@ -69,6 +70,7 @@ class GridMap:
     
     def plotTrajectory(self, trajectory_kvalues):
         trajectoryCoordinates = list(trajectory_kvalues[0].keys())
+        # print(trajectoryCoordinates)
         for coord in trajectoryCoordinates:
             coordx, coordy = coord[0], coord[1]
             self.gridmap[coordy][coordx] = 0
