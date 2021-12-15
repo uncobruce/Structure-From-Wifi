@@ -33,9 +33,6 @@ floorplan = Floorplan(floorplan_img_path)
 # Obtain map contours
 map_contour = np.array(floorplan.mapContour())
 
-# floorplan_x_max, floorplan_x_min, floorplan_y_max, floorplan_y_min = max(map_contour[:,0]), min(map_contour[:,0]), max(map_contour[:,1]), min(map_contour[:,1])    
-
-
 # Obtain k-visibility plot and router point
 routerpoint, unscaled_axis_limits, kvaluescolordict = kvisibility_algorithm.plotKVisRegion(map_contour, showPlot=False)
 facecolors=['red','yellow','blue','green','orange', 'magenta', 'navy', 'teal', 'tan', 'lightsalmon','lightyellow','coral','rosybrown']
@@ -70,20 +67,4 @@ coneshapes = coneshapes.coneshapes(trajectory_kvalues, scaled_routerpoint)
 
 # Phase III: Occupancy Grid Mapping
 # =========================================================
-gridMap.updateOccupancyGrid(coneshapes, facecolors, showPlot=True, showGroundTruth=False)
-# kvalues = list(coneshapes.keys())
-# kvalues.reverse()
-# for k in kvalues:
-#     k_coneshapes = coneshapes[k]
-    
-# gridmap = gridMap.gridmap
-# gridmap = np.stack((gridmap,)*3, axis=-1)
-# gridmap[10][10] = (0,0,0)
-
-# print(type(gridmap))
-# print(gridmap[10])
-# gridMap.plotGrid(gridmap)
-
-# poly = coneshapes[0][0]
-# point = Point(10,10)
-# print(poly.contains(Point(30,30)))
+gridMap.updateOccupancyGrid(coneshapes, facecolors, showPlot=True, showGroundTruth=True)
