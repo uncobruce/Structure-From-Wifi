@@ -3,13 +3,18 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from matplotlib import colors
+
+from shapely.geometry import Point, Polygon, MultiPoint
+from shapely.ops import polygonize
+from shapely.ops import cascaded_union
+from descartes import PolygonPatch
 class GridMap:
-    def __init__(self, desired_height=80, desired_width=80):
+    def __init__(self, ground_truth_image, desired_height=80, desired_width=80):
         self.gridmap = np.zeros(desired_width*desired_height)
         self.gridmap = self.gridmap.reshape((desired_width, desired_height))
         self.gridmap[self.gridmap == 0] = 0.5
         self.desired_height, self.desired_width = desired_height, desired_width
-        
+        self.ground_truth_image = ground_truth_image
 
     def plotFloorplanGroundTruth(self, ground_truth_image):
         ''' Draw ground truth map scaled to desired grid size. 
@@ -35,9 +40,14 @@ class GridMap:
         mapCoordinates=np.array(mapCoordinates)  
         for coords in mapCoordinates:
             mapx, mapy = coords[0],coords[1]
-            self.gridmap[mapy-5][mapx+5] = 1
+            self.gridmap[mapy-5][mapx+5] = 0
         self.plotGrid(self.gridmap)
         return self.gridmap
+    
+    def resetGrid(self):
+        for i in range(len(self.gridmap)):
+            for j in range(len(self.gridmap)):
+                self.gridmap[i][j] = 0.5
     
     def plotGrid(self, gridmap):  
         fig, ax = plt.subplots()
@@ -77,3 +87,23 @@ class GridMap:
         self.gridmap[routerCoordinates[1]][routerCoordinates[0]]
         if showPlot == True:
             self.plotGrid(self.gridmap)
+            
+    def updateOccupancyGrid(self, kvalue_coneshapes, facecolors, showPlot=True, showGroundTruth=True, resetGrid=False):
+        # Reshape gridmap to accept RGB values as array elements
+        self.gridmap = np.stack((self.gridmap,)*3, axis=-1)  
+        
+        kvalues = list(kvalue_coneshapes.keys())
+        kvalues.reverse()
+        for k in kvalues:
+            k_coneshape = kvalue_coneshapes[k][0]
+            facecolor=facecolors[k]
+            colorRGB = colors.to_rgb(facecolor)
+            for i in range(len(self.gridmap)):
+                for j in range(len(self.gridmap)):
+                    if k_coneshape.contains(Point(j,i)):
+                        self.gridmap[i][j]=colorRGB
+        if showPlot == True:
+            self.plotGrid(self.gridmap)
+        if showGroundTruth == True:
+            self.plotFloorplanGroundTruth(self.ground_truth_image)    
+        

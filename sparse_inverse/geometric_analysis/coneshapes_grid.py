@@ -4,10 +4,15 @@ from shapely.geometry import Point, Polygon, MultiPoint
 from shapely.ops import polygonize
 from shapely.ops import cascaded_union
 from descartes import PolygonPatch
+import numpy as np
 import math
 
-def coneshapes(trajectory_kvalues, routerpt, gridmap):
+def coneshapes(trajectory_kvalues, routerpt):
     continuous_segments = continuousSegments(trajectory_kvalues)
+    kvalue_coneshapes = mapConeshapes(continuous_segments, routerpt)
+    return kvalue_coneshapes
+
+def mapConeshapes(continuous_segments, routerpt):
     kvalue_coneshapes = {}
     current_kval = 0
     for kval in continuous_segments:
@@ -27,8 +32,7 @@ def coneshapes(trajectory_kvalues, routerpt, gridmap):
         kvalue_coneshapes[current_kval].append(polygon_final)
         current_kval += 1
     return kvalue_coneshapes
-    
-    
+
 def continuousSegments(trajectory_kvalues):
     trajectoryCoordinates = list(trajectory_kvalues[0].keys())
     kvalues = list(list(dict.fromkeys(list(trajectory_kvalues[0].values()))))
