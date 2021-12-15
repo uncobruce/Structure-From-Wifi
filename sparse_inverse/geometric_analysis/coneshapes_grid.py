@@ -4,7 +4,7 @@ from shapely.geometry import Point, Polygon, MultiPoint
 from shapely.ops import polygonize
 from shapely.ops import cascaded_union
 from descartes import PolygonPatch
-
+import math
 
 def continuousSegments(trajectory_kvalues):
     trajectoryCoordinates = list(trajectory_kvalues[0].keys())
@@ -14,6 +14,41 @@ def continuousSegments(trajectory_kvalues):
     # Separate coordinates based on k value
     for i in range(len(subsegments_kvalue_separated)):
         kval_list = [point for point in trajectoryCoordinates if trajectory_kvalues[0][point] == i] # i corresp to kvalue here
-        subsegments_kvalue_separated[i] = kval_list
-    print(subsegments_kvalue_separated[0])
-        
+        subsegments_kvalue_separated[i] = kval_list 
+    # for row in subsegments_kvalue_separated:
+    #     print(row, "\n")
+    
+    # Within each k-val grouping, separate into continuous segments
+    current_kval = 0
+    continuous_segments = {}
+    EPS = 0.1 #TODO adjust EPS for erratic trajectories
+    def slope(point1, point2):
+        x1, y1, x2, y2 = point1[0], point1[1], point2[0], point2[1]
+        if (x2-x1) == 0: return math.inf
+        return (y2-y1)/(x2-x1)
+    for kval_grouping in subsegments_kvalue_separated:
+        continuous_segments[current_kval] = [] # initialize list of continuous segments for current k value group
+        current_continuous_segments = []
+        print(current_kval)
+        for i in range(len(kval_grouping)-1):
+            point1, point2 = kval_grouping[i], kval_grouping[i+1]
+            direction = slope(point1,point2)
+            if i == 0 or current_continuous_segments == []:
+                current_direction = direction
+                current_continuous_segments = [point1]
+                previous_direction = direction
+                continue
+            if previous_direction == math.inf and current_direction == math.inf:
+                current_continuous_segments.append(point1)
+            elif abs(previous_direction-current_direction) <= EPS:
+                current_continuous_segments.append(point1)
+            else:
+                continuous_segments[current_kval].append(current_continuous_segments)
+                current_continuous_segments = []
+                print('terminating at', point1, point2, direction)
+            previous_direction = direction
+            
+            print(point1, point2, direction)
+        current_kval +=1
+    # print(continuous_segments)
+    return continuous_segments
