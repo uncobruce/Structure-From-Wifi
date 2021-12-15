@@ -34,13 +34,13 @@ floorplan = Floorplan(floorplan_img_path)
 map_contour = np.array(floorplan.mapContour())
 
 # floorplan_x_max, floorplan_x_min, floorplan_y_max, floorplan_y_min = max(map_contour[:,0]), min(map_contour[:,0]), max(map_contour[:,1]), min(map_contour[:,1])    
-floorplan_x_max, floorplan_x_min, floorplan_y_max, floorplan_y_min = floorplan.axisLimits()
+
 
 # Obtain k-visibility plot and router point
 routerpoint, unscaled_axis_limits, kvaluescolordict = kvisibility_algorithm.plotKVisRegion(map_contour, showPlot=False)
 facecolors=['red','yellow','blue','green','orange', 'magenta', 'navy', 'teal', 'tan', 'lightsalmon','lightyellow','coral','rosybrown']
 kvisibility_map_image = cv2.imread('data_processing/kvis_plot.png')
-
+floorplan_x_max, floorplan_y_max = unscaled_axis_limits[0],unscaled_axis_limits[1]
 # Initialize grid map
 gridWidth, gridHeight = 80, 80
 gridMap = grid_map.GridMap()
@@ -54,6 +54,10 @@ kvisplot_path = "data_processing/kvis_plot.png"
 trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path, gridWidth, gridHeight, routerpoint, unscaled_axis_limits, kvaluescolordict, kvis_gridmap)
 trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
 
+# Scale router point to grid map size
+routery, routerx = int((gridHeight)*routerpoint[0]/floorplan_y_max), int((gridWidth)*routerpoint[1]/floorplan_x_max)
+scaled_routerpoint = (routerx, routery)
+
 # Plot trajectory and ground truth on grid map
 gridMap.plotFloorplanGroundTruth(floorplan.image)
 gridMap.plotGrid(kvis_gridmap)
@@ -62,4 +66,4 @@ gridMap.plotTrajectory(trajectory_kvalues)
 
 # Phase II: Geometric Analysis
 # =========================================================
-cont_segments = coneshapes.continuousSegments(trajectory_kvalues)
+coneshapes.coneshapes(trajectory_kvalues,scaled_routerpoint)

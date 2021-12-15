@@ -6,6 +6,11 @@ from shapely.ops import cascaded_union
 from descartes import PolygonPatch
 import math
 
+def coneshapes(trajectory_kvalues, routerpt):
+    continuous_segments = continuousSegments(trajectory_kvalues)
+    print(routerpt)
+    
+    
 def continuousSegments(trajectory_kvalues):
     trajectoryCoordinates = list(trajectory_kvalues[0].keys())
     kvalues = list(list(dict.fromkeys(list(trajectory_kvalues[0].values()))))
@@ -15,9 +20,7 @@ def continuousSegments(trajectory_kvalues):
     for i in range(len(subsegments_kvalue_separated)):
         kval_list = [point for point in trajectoryCoordinates if trajectory_kvalues[0][point] == i] # i corresp to kvalue here
         subsegments_kvalue_separated[i] = kval_list 
-    # for row in subsegments_kvalue_separated:
-    #     print(row, "\n")
-    
+  
     # Within each k-val grouping, separate into continuous segments
     current_kval = 0
     continuous_segments = {}
@@ -29,7 +32,6 @@ def continuousSegments(trajectory_kvalues):
     for kval_grouping in subsegments_kvalue_separated:
         continuous_segments[current_kval] = [] # initialize list of continuous segments for current k value group
         current_continuous_segments = []
-        print(current_kval)
         for i in range(len(kval_grouping)-1):
             point1, point2 = kval_grouping[i], kval_grouping[i+1]
             direction = slope(point1,point2)
@@ -45,10 +47,7 @@ def continuousSegments(trajectory_kvalues):
             else:
                 continuous_segments[current_kval].append(current_continuous_segments)
                 current_continuous_segments = []
-                print('terminating at', point1, point2, direction)
             previous_direction = direction
             
-            print(point1, point2, direction)
         current_kval +=1
-    # print(continuous_segments)
     return continuous_segments
