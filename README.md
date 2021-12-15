@@ -1,4 +1,4 @@
-# Structure from WiFi (SfM)
+# Structure from WiFi (SfW)
 A method for geometrically mapping an environment using WiFi, based on a novel "inverse k-visibility" algorithm which uses trajectory information and RSSI data to obtain a map of the environment. This is a work in progress. 
 
 ## Organization
