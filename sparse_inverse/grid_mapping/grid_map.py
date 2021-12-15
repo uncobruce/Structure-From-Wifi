@@ -67,12 +67,13 @@ class GridMap:
             self.plotGrid(self.kvisgridmap)
         return self.kvisgridmap
     
-    def plotTrajectory(self, trajectory_kvalues):
+    def plotTrajectory(self, trajectory_kvalues, showPlot=True):
         trajectoryCoordinates = list(trajectory_kvalues[0].keys())
         # print(trajectoryCoordinates)
         for coord in trajectoryCoordinates:
             coordx, coordy = coord[0], coord[1]
-            self.gridmap[coordy][coordx] = 0
+            self.gridmap[coordy][coordx] = 1
         routerCoordinates = trajectory_kvalues[1]
         self.gridmap[routerCoordinates[1]][routerCoordinates[0]]
-        self.plotGrid(self.gridmap)
+        if showPlot == True:
+            self.plotGrid(self.gridmap)

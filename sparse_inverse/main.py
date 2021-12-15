@@ -7,6 +7,10 @@ import grid_mapping.grid_map as grid_map
 import data_processing.associate_traj_kvals as associate_traj_kvals
 import geometric_analysis.coneshapes_grid as coneshapes
 
+from shapely.geometry import Point, Polygon, MultiPoint
+from shapely.ops import polygonize
+from shapely.ops import cascaded_union
+from descartes import PolygonPatch
 class Floorplan:
     def __init__(self, floorplan_img_path):
         self.image = cv2.imread(floorplan_img_path)
@@ -59,11 +63,27 @@ routery, routerx = int((gridHeight)*routerpoint[0]/floorplan_y_max), int((gridWi
 scaled_routerpoint = (routerx, routery)
 
 # Plot trajectory and ground truth on grid map
-gridMap.plotFloorplanGroundTruth(floorplan.image)
+# gridMap.plotFloorplanGroundTruth(floorplan.image)
 gridMap.plotGrid(kvis_gridmap)
-gridMap.plotTrajectory(trajectory_kvalues)
+gridMap.plotTrajectory(trajectory_kvalues, showPlot=False)
 
 
 # Phase II: Geometric Analysis
 # =========================================================
-coneshapes.coneshapes(trajectory_kvalues,scaled_routerpoint)
+coneshapes = coneshapes.coneshapes(trajectory_kvalues, scaled_routerpoint, gridMap.gridmap)
+kvalues = list(coneshapes.keys())
+kvalues.reverse()
+for k in kvalues:
+    k_coneshapes = coneshapes[k]
+    
+gridmap = gridMap.gridmap
+gridmap = np.stack((gridmap,)*3, axis=-1)
+gridmap[10][10] = (0,0,0)
+
+print(type(gridmap))
+print(gridmap[10])
+gridMap.plotGrid(gridmap)
+
+poly = coneshapes[0][0]
+point = Point(10,10)
+print(poly.contains(Point(30,30)))

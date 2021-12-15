@@ -6,9 +6,27 @@ from shapely.ops import cascaded_union
 from descartes import PolygonPatch
 import math
 
-def coneshapes(trajectory_kvalues, routerpt):
+def coneshapes(trajectory_kvalues, routerpt, gridmap):
     continuous_segments = continuousSegments(trajectory_kvalues)
-    print(routerpt)
+    kvalue_coneshapes = {}
+    current_kval = 0
+    for kval in continuous_segments:
+        kvalue_coneshapes[current_kval] = []
+        list_of_cont_segments = continuous_segments[kval]
+        totalcones = []
+        for cont_segment in list_of_cont_segments:
+            line1 = (cont_segment[0], cont_segment[-1])
+            line2 = (routerpt, cont_segment[0])
+            line3 = (routerpt, cont_segment[-1])
+            coneregion = list(polygonize((line1,line2, line3)))
+            if coneregion != []:
+                cone = coneregion[0]
+                totalcones.append(cone)
+        kregioncones = [cone for cone in totalcones]
+        polygon_final = cascaded_union(kregioncones)
+        kvalue_coneshapes[current_kval].append(polygon_final)
+        current_kval += 1
+    return kvalue_coneshapes
     
     
 def continuousSegments(trajectory_kvalues):
@@ -45,6 +63,7 @@ def continuousSegments(trajectory_kvalues):
             elif abs(previous_direction-current_direction) <= EPS:
                 current_continuous_segments.append(point1)
             else:
+                current_continuous_segments.append(point1)
                 continuous_segments[current_kval].append(current_continuous_segments)
                 current_continuous_segments = []
             previous_direction = direction
