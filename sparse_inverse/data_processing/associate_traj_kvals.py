@@ -8,8 +8,8 @@ class trajectoryObject:
     def __init__(self, trajectory_endpts_path, kvisplot_path, grid_width, grid_height, router_coords_unscaled, axis_limits, kvaluescolordict, kvis_gridmap):
         self.trajectoryEndPointsPath = trajectory_endpts_path
         self.kVisibilityPlotPath = kvisplot_path
-        self.routerX = int(((int(grid_height))*router_coords_unscaled[0])/axis_limits[0])
-        self.routerY = int(((int(grid_width))*router_coords_unscaled[1])/axis_limits[1])
+        self.routerX = int(((int(grid_height))*router_coords_unscaled[0])/axis_limits[0]) + 5
+        self.routerY = int(((int(grid_width))*router_coords_unscaled[1])/axis_limits[1]) - 1 #TODO automate
         self.routerCoords = (self.routerX, self.routerY)
         self.kvaluescolordict = kvaluescolordict
         self.kvis_gridmap = kvis_gridmap

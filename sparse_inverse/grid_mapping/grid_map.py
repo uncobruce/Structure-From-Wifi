@@ -84,10 +84,10 @@ class GridMap:
             coordx, coordy = coord[0], coord[1]
             self.gridmap[coordy][coordx] = 1
         routerCoordinates = trajectory_kvalues[1]
-        self.gridmap[routerCoordinates[1]][routerCoordinates[0]]
+        self.gridmap[routerCoordinates[1]][routerCoordinates[0]] = 1
         if showPlot == True:
             self.plotGrid(self.gridmap)
-            
+      
     def updateOccupancyGrid(self, kvalue_coneshapes, facecolors, showPlot=True, showGroundTruth=True, resetGrid=False):
         # Reshape gridmap to accept RGB values as array elements
         self.gridmap = np.stack((self.gridmap,)*3, axis=-1)  
@@ -102,8 +102,10 @@ class GridMap:
                 for j in range(len(self.gridmap)):
                     if k_coneshape.contains(Point(j,i)):
                         self.gridmap[i][j]=colorRGB
+        
         if showPlot == True:
             self.plotGrid(self.gridmap)
+            
         if showGroundTruth == True:
             self.plotFloorplanGroundTruth(self.ground_truth_image)    
         
