@@ -57,7 +57,7 @@ trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
 
 # Plot trajectory and ground truth on grid map
 # gridMap.plotFloorplanGroundTruth(floorplan.image)
-# gridMap.plotGrid(kvis_gridmap)
+gridMap.plotGrid(kvis_gridmap)
 # gridMap.plotTrajectory(trajectory_kvalues, showPlot=True)
 
 
