@@ -6,6 +6,7 @@ import data_processing.kvisibility_algorithm as kvisibility_algorithm
 import grid_mapping.grid_map as grid_map
 import data_processing.associate_traj_kvals as associate_traj_kvals
 import geometric_analysis.coneshapes_grid as coneshapes
+import boundary_estimation as be
 
 class Floorplan:
     def __init__(self, floorplan_img_path):
@@ -64,8 +65,18 @@ gridMap.plotGrid(kvis_gridmap)
 # Phase II: Geometric Analysis
 # =========================================================
 cont_segs = coneshapes.continuousSegments(trajectory_kvalues)
-# coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
+coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
+gridMap.updateOccupancyGrid(coneshapes, facecolors, showPlot=True, showGroundTruth=True) # show coneshapes plotted on gridmap
 
-# Phase III: Occupancy Grid Mapping
+# Phase III: Boundary Estimation
 # =========================================================
-# gridMap.updateOccupancyGrid(coneshapes, facecolors, showPlot=True, showGroundTruth=True)
+be = be.wallCoordinates(coneshapes)
+a = coneshapes[0][0]
+b = coneshapes[1][0]
+c = coneshapes[2][0]  
+d = coneshapes[3][0] 
+k1 = b.difference(a)
+k2 = c.difference(a)
+k3 = d.difference(a)
+
+# k2_2 = c.difference(k1)
