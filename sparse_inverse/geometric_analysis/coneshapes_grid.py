@@ -14,6 +14,7 @@ def dictionaryKeySeparator(criterion, dictionary):
 def coneshapes(trajectory_kvalues,routerpt):
     continuous_segments = continuousSegments(trajectory_kvalues)
     kvalue_coneshapes = mapConeshapes(continuous_segments, routerpt)
+    kvalue_coneshapes = mapConeShapesAfterDifference(kvalue_coneshapes)
     return kvalue_coneshapes
 
 def slope(x1, y1, x2, y2):
@@ -86,4 +87,21 @@ def mapConeshapes(continuous_segments, routerpt):
         polygon_final = cascaded_union(kregioncones)
         kvalue_coneshapes[current_kval].append(polygon_final)
         current_kval += 1
-    return kvalue_coneshapes
+    return kvalue_coneshapes # map of kvals : coneshapes
+
+def mapConeShapesAfterDifference(kvalue_coneshapes):
+    new_kvalue_coneshapes = {}
+    for i in range(len(kvalue_coneshapes)):
+        kj_polys = kvalue_coneshapes[i][0]
+        if i == 0:
+            new_kvalue_coneshapes[0] = kj_polys
+            continue
+        ki_polys = kvalue_coneshapes[i-1][0]
+        new_poly = kj_polys.difference(ki_polys)
+        if new_poly.geom_type == 'MultiPolygon':
+            polylist = list(new_poly.geoms)
+            new_poly = polylist
+        new_kvalue_coneshapes[i] = new_poly        
+    return new_kvalue_coneshapes
+    
+        

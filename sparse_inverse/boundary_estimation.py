@@ -1,11 +1,28 @@
 ''' Given a dictionary of kvalues: coneshapes, estimate wall locations and return their coordinates.'''
 
-from shapely.geometry import Point, Polygon, MultiPoint
+from shapely.geometry import Point, Polygon, MultiPoint, LineString
 from shapely.ops import polygonize
 from shapely.ops import cascaded_union
 from descartes import PolygonPatch
 import numpy as np
 import math
+
+
+def boundaryEstimation(kvalue_coneshapes, router):
+    # input: kvalue_coneshapes after geometric difference calculated
+    # print(kvalue_coneshapes)
+    for kval in kvalue_coneshapes:
+        if kval == 0: continue
+        poly = kvalue_coneshapes[kval]
+        prevpoly = kvalue_coneshapes[kval-1] # TODO change to func for k2-k1 where there are multiple prev polys
+        if type(poly) == list and kval == 1: # multiple polys for kvalue
+            #for p in poly:
+            return poly[0], prevpoly
+            polygonHandler(poly[0], prevpoly, router)
+        elif type(poly) == Polygon: # only one polygon
+            pass #polyhandler
+        
+    
 
 
 def slope(x1, y1, x2, y2):
@@ -14,68 +31,50 @@ def slope(x1, y1, x2, y2):
     slope = (y2-y1)/(x2-x1)
     return slope
 
-def multiPolygonWallSlope(multipolys, ki):
-    k_j_polygons = list(multipolys.geoms)
-    wall_slope = None
-    for kj in k_j_polygons:    
-        intersection = kj.intersection(ki)
-        if intersection.geom_type == 'LineString':
-            x1, y1 = intersection.coords[0][0], intersection.coords[0][1]
-            x2, y2 = intersection.coords[1][0], intersection.coords[1][1]
-            m = slope(x1, y1, x2, y2)
-            if wall_slope == math.inf or wall_slope == 0:
-                continue
-            elif m == math.inf or m == 0:
-                wall_slope = m
-            elif wall_slope == None or abs(m) > wall_slope:
-                wall_slope = m
-        elif intersection.geom_type == 'GeometryCollection':
-            for inter in intersection:
-                if inter.geom_type == 'LineString':
-                    x1, y1 = inter.coords[0][0], inter.coords[0][1]
-                    x2, y2 = inter.coords[1][0], inter.coords[1][1]
-                    m = slope(x1, y1, x2, y2)
-                    if wall_slope == math.inf or wall_slope == 0:
-                        continue
-                    elif m == math.inf or m == 0:
-                        wall_slope = m
-                    elif wall_slope == None or abs(m) > wall_slope:
-                        wall_slope = m    
-    if wall_slope == math.inf or abs(wall_slope) > 35:
-        wall_slope = 'vertical'
-    return wall_slope
+def polygonHandler(poly, prevpoly, router):
+    ''' :type poly: current kj Polygon (k_i-1) polygon being analyzed for walls
+        :type prevpoly: ki Polygon being compared with kj polygon
+        :rtype: wall coordinates 
+        '''
+    eps1, eps2, alpha = 4.5, 0.05, 1
+    coordinates = list(poly.exterior.coords)
+    edges = [(coordinates[i], coordinates[i+1]) for i in range(len(coordinates)-1)]
+    # For each edge: 
+    closest_edge_to_router=None # edge bordering ki poly
+    shortest_dist_to_router = 100
     
-def getHorizMidPoint(polygon):
-    pass # get polygon midpoint from router-most coord to closest x coord
+    for edge in edges:   
+        # Calculate slope
+        p1, p2 = edge[0], edge[1]
+        m = slope(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1]))
+        norm = np.linalg.norm(np.array(p2)-np.array(p1)) # points too close are disregarded
+        dist_to_router = np.linalg.norm(np.array(p1)-np.array(router))
+        
+        # USE THE INTERSECTION 
+        
+        poly_intersects_prevpoly = poly.intersects(prevpoly)
+        # If there is a vertical wall, send to vertical wall handler
+        if abs(m) >= eps1 and norm > alpha:
+            if (closest_edge_to_router == None or dist_to_router < shortest_dist_to_router):
+                shortest_dist_to_router = dist_to_router
+                closest_edge_to_router = edge
+                wall_slope = 'vertical'
+                print(p1,p2, wall_slope)
+                print(poly, prevpoly)
+                # send to vertical wall handler
+                
+        # If there is a horizontal wall, send to horiz wall handler
+        elif abs(m) <= eps2 and norm > alpha:
+            pass
+                
+    return poly, prevpoly
+            
+        
 
-def closestXPointtoRouter(midpoints):
-    smallest_distance = 0
-    midpoint = None
-    return midpoint
-def multiPolygonMidPointHandler(multipolys, wall_slope):
-    k_j_polygons = list(multipolys.geoms)
-    if wall_slope == 'vertical':
-        midpoints=[]
-        for kj in k_j_polygons:
-            midpoint = getHorizMidPoint(kj)
-            midpoints.append(midpoint)
-        midpoint = closestXPointtoRouter(midpoints)
+        
+            
+        
+            # Append all wall coords to a list
+    print("\n")
+    
 
-def multiPolygonHorizWallEstimator(wallHorizMidPoint, multipolys):
-    k_j_polygons = list(multipolys.geoms)    
-    # plot wall along all y coords within poly at same wallhorizmidpoint
-
-def wallCoordinates(coneshapes_dict):
-    ki = coneshapes_dict[0][0]
-    kj = coneshapes_dict[1][0]
-    difference = kj.difference(ki)
-    if difference.geom_type == 'MultiPolygon':
-        wall_slope = multiPolygonWallSlope(difference, ki)
-        wallHorizMidPoint = multiPolygonMidPointHandler(difference, wall_slope)
-        wallEstimation = multiPolygonHorizWallEstimator(wallHorizMidPoint, difference)
-
-
-
-
-def intersectionType(intersection):
-    return intersection

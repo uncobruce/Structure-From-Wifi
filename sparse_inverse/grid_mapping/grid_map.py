@@ -95,14 +95,22 @@ class GridMap:
         kvalues = list(kvalue_coneshapes.keys())
         kvalues.reverse()
         for k in kvalues:
-            k_coneshape = kvalue_coneshapes[k][0]
-            facecolor=facecolors[k]
-            colorRGB = colors.to_rgb(facecolor)
-            for i in range(len(self.gridmap)):
-                for j in range(len(self.gridmap)):
-                    if k_coneshape.contains(Point(j,i)):
-                        self.gridmap[i][j]=colorRGB
-        
+            k_coneshape = kvalue_coneshapes[k]
+            if type(k_coneshape) == Polygon:
+                facecolor=facecolors[k]
+                colorRGB = colors.to_rgb(facecolor)
+                for i in range(len(self.gridmap)):
+                    for j in range(len(self.gridmap)):
+                        if k_coneshape.contains(Point(j,i)):
+                            self.gridmap[i][j]=colorRGB
+            elif type(k_coneshape) == list:
+                for p in k_coneshape:
+                    facecolor=facecolors[k]
+                    colorRGB = colors.to_rgb(facecolor)
+                    for i in range(len(self.gridmap)):
+                        for j in range(len(self.gridmap)):
+                            if p.contains(Point(j,i)):
+                                self.gridmap[i][j]=colorRGB
         if showPlot == True:
             self.plotGrid(self.gridmap)
             

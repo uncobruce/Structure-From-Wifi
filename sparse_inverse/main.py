@@ -70,13 +70,14 @@ gridMap.updateOccupancyGrid(coneshapes, facecolors, showPlot=True, showGroundTru
 
 # Phase III: Boundary Estimation
 # =========================================================
-be = be.wallCoordinates(coneshapes)
-a = coneshapes[0][0]
-b = coneshapes[1][0]
-c = coneshapes[2][0]  
-d = coneshapes[3][0] 
-k1 = b.difference(a)
-k2 = c.difference(a)
-k3 = d.difference(a)
+router = trajectory_kvalues[1]
+be = be.boundaryEstimation(coneshapes, router)
+# a = coneshapes[0][0]
+# b = coneshapes[1][0]
+# c = coneshapes[2][0]  
+# d = coneshapes[3][0] 
+# k1 = b.difference(a)
+# k2 = c.difference(a)
+# k3 = d.difference(a)
 
 # k2_2 = c.difference(k1)
