@@ -71,7 +71,8 @@ def polygonVerticalWallCoordinates(polygon, x_coordinate, y_min, y_max):
         xcoord = x_coordinate
         ycoord = j
         coord = (xcoord, ycoord)
-        list_of_coords.append(coord)
+        if Point(xcoord, ycoord).within(polygon):
+            list_of_coords.append(coord)
     return list_of_coords
 
 def polygonHandler(poly, prevpoly):
