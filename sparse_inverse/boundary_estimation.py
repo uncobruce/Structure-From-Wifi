@@ -8,22 +8,19 @@ import numpy as np
 import math
 
 
-def boundaryEstimation(kvalue_coneshapes, router):
-    # input: kvalue_coneshapes after geometric difference calculated
-    # print(kvalue_coneshapes)
+def boundaryEstimation(kvalue_coneshapes):
+    # input: kvalue_coneshapes after geometric difference calculated 
+    wall_coordinates = None
     for kval in kvalue_coneshapes:
         if kval == 0: continue
         poly = kvalue_coneshapes[kval]
         prevpoly = kvalue_coneshapes[kval-1] # TODO change to func for k2-k1 where there are multiple prev polys
-        if type(poly) == list and kval == 1: # multiple polys for kvalue
-            #for p in poly:
-            return poly[0], prevpoly
-            polygonHandler(poly[0], prevpoly, router)
+        if type(poly) == list and kval == 1: # if multiple polys for kvalue
+            # for p in poly:
+            wall_coordinates = polygonHandler(poly[0], prevpoly)
         elif type(poly) == Polygon: # only one polygon
             pass #polyhandler
-        
-    
-
+    return wall_coordinates
 
 def slope(x1, y1, x2, y2):
     if abs(x2-x1) == 0:
@@ -31,50 +28,82 @@ def slope(x1, y1, x2, y2):
     slope = (y2-y1)/(x2-x1)
     return slope
 
-def polygonHandler(poly, prevpoly, router):
+def wallHorizontalDistance(intersection_edge, polygon):
+    '''
+        :type intersection_edge: LineString
+        :type polygon: Polygon being analyzed
+        :rtype int: distance to wall (equal to half of x distance of closest vertex)
+    '''
+    coordinates = list(polygon.exterior.coords)
+    intersection_edge = list(intersection_edge.coords)
+    e1, e2 = intersection_edge[0], intersection_edge[1]
+    shortest_distance = 100
+    closest_vertex=None
+    for coord in coordinates:
+        if coord == e1 or coord == e2:
+            continue
+        coordx = coord[0]
+        e1x = e1[0]
+        horizontal_distance = int(abs(coordx-e1x))
+        if closest_vertex == None or (horizontal_distance < shortest_distance and horizontal_distance > 0):
+            closest_vertex = coord
+            shortest_distance = horizontal_distance
+    
+    return 1+shortest_distance//2 # adding 1 seems more accurate for some reason
+
+
+
+def y_range(polygon):
+    coordinates = list(polygon.exterior.coords)
+    maxy = None
+    miny = None
+    for coord in coordinates:
+        y = coord[1]
+        if maxy == None or y > maxy:
+            maxy = y
+        if miny == None or y < miny:
+            miny = y
+    return int(miny), int(maxy)
+
+def polygonVerticalWallCoordinates(polygon, x_coordinate, y_min, y_max):
+    list_of_coords = []
+    for j in range(y_min, y_max):
+        xcoord = x_coordinate
+        ycoord = j
+        coord = (xcoord, ycoord)
+        list_of_coords.append(coord)
+    return list_of_coords
+
+def polygonHandler(poly, prevpoly):
     ''' :type poly: current kj Polygon (k_i-1) polygon being analyzed for walls
         :type prevpoly: ki Polygon being compared with kj polygon
         :rtype: wall coordinates 
-        '''
-    eps1, eps2, alpha = 4.5, 0.05, 1
-    coordinates = list(poly.exterior.coords)
-    edges = [(coordinates[i], coordinates[i+1]) for i in range(len(coordinates)-1)]
-    # For each edge: 
-    closest_edge_to_router=None # edge bordering ki poly
-    shortest_dist_to_router = 100
-    
-    for edge in edges:   
-        # Calculate slope
-        p1, p2 = edge[0], edge[1]
-        m = slope(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1]))
-        norm = np.linalg.norm(np.array(p2)-np.array(p1)) # points too close are disregarded
-        dist_to_router = np.linalg.norm(np.array(p1)-np.array(router))
-        
-        # USE THE INTERSECTION 
-        
-        poly_intersects_prevpoly = poly.intersects(prevpoly)
-        # If there is a vertical wall, send to vertical wall handler
-        if abs(m) >= eps1 and norm > alpha:
-            if (closest_edge_to_router == None or dist_to_router < shortest_dist_to_router):
-                shortest_dist_to_router = dist_to_router
-                closest_edge_to_router = edge
-                wall_slope = 'vertical'
-                print(p1,p2, wall_slope)
-                print(poly, prevpoly)
-                # send to vertical wall handler
+    '''
+    wall_coordinates = None
+    eps1, eps2, alpha = 8, 0.05, 1
+    intersection = poly.intersection(prevpoly)
+    if intersection.geom_type == 'GeometryCollection':
+        for inter in intersection:
+            if inter.geom_type == 'LineString':
+                x1, y1, x2, y2 = inter.coords[0][0], inter.coords[0][1], inter.coords[1][0], inter.coords[1][1]
+                m = slope(x1, y1, x2, y2)
+                norm = np.linalg.norm(np.array([x2,y2])-np.array([x1,y1]))
+                if (abs(m) > eps1) and norm > alpha: # If vertical wall found
+                    print("Vertical wall found")
+                    intersection_edge = inter
+                    distance_to_wall = wallHorizontalDistance(intersection_edge, poly)
+                    wall_x_coordinate = int(x1 + distance_to_wall)
+                    y_min, y_max = y_range(poly)
+                    wall_coordinates = polygonVerticalWallCoordinates(poly, wall_x_coordinate, y_min, y_max)
+                    
+    elif intersection.geom_type == 'LineString':
+        x1, y1, x2, y2 = intersection.coords[0][0], intersection.coords[0][1], intersection.coords[1][0], intersection.coords[1][1]
+        m = slope(x1, y1, x2, y2)
+        norm = np.linalg.norm(np.array([x2,y2])-np.array([x1,y1]))
+        if (abs(m) > eps1) and norm > alpha: # Vertical wall found
+            print("Vertical wall found")
+       
                 
-        # If there is a horizontal wall, send to horiz wall handler
-        elif abs(m) <= eps2 and norm > alpha:
-            pass
-                
-    return poly, prevpoly
-            
-        
-
-        
-            
-        
-            # Append all wall coords to a list
     print("\n")
-    
+    return wall_coordinates
 

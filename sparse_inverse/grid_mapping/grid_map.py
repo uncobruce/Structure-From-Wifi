@@ -77,18 +77,23 @@ class GridMap:
             self.plotGrid(self.kvisgridmap)
         return self.kvisgridmap
     
-    def plotTrajectory(self, trajectory_kvalues, showPlot=True):
+    def plotTrajectory(self, trajectory_kvalues):
         trajectoryCoordinates = list(trajectory_kvalues[0].keys())
         # print(trajectoryCoordinates)
         for coord in trajectoryCoordinates:
             coordx, coordy = coord[0], coord[1]
-            self.gridmap[coordy][coordx] = 1
+            self.gridmap[coordy][coordx] = 0
         routerCoordinates = trajectory_kvalues[1]
-        self.gridmap[routerCoordinates[1]][routerCoordinates[0]] = 1
-        if showPlot == True:
-            self.plotGrid(self.gridmap)
-      
-    def updateOccupancyGrid(self, kvalue_coneshapes, facecolors, showPlot=True, showGroundTruth=True, resetGrid=False):
+        self.gridmap[routerCoordinates[1]][routerCoordinates[0]] = 0
+        self.plotGrid(self.gridmap)
+    
+    def plotWallCoordinates(self, wall_coords):
+        for coord in wall_coords:
+            coordx, coordy = coord[0], coord[1]
+            self.gridmap[coordy][coordx] = 1
+        self.plotGrid(self.gridmap)
+    
+    def plotKValueConeshapes(self, kvalue_coneshapes, facecolors, showPlot=True, showGroundTruth=True, resetGrid=False):
         # Reshape gridmap to accept RGB values as array elements
         self.gridmap = np.stack((self.gridmap,)*3, axis=-1)  
         
@@ -117,3 +122,4 @@ class GridMap:
         if showGroundTruth == True:
             self.plotFloorplanGroundTruth(self.ground_truth_image)    
         
+        return self.gridmap

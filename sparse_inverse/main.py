@@ -52,32 +52,23 @@ kvisplot_path = "data_processing/kvis_plot.png"
 trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path, gridWidth, gridHeight, routerpoint, unscaled_axis_limits, kvaluescolordict, kvis_gridmap)
 trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
 
-# Scale router point to grid map size
-# routery, routerx = int((gridHeight+10)*routerpoint[0]/floorplan_y_max), int((gridWidth+30)*routerpoint[1]/floorplan_x_max)
-# scaled_routerpoint = (routerx, routery)
-
-# Plot trajectory and ground truth on grid map
-# gridMap.plotFloorplanGroundTruth(floorplan.image)
 gridMap.plotGrid(kvis_gridmap)
-# gridMap.plotTrajectory(trajectory_kvalues, showPlot=True)
 
 
 # Phase II: Geometric Analysis
 # =========================================================
 cont_segs = coneshapes.continuousSegments(trajectory_kvalues)
 coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
-gridMap.updateOccupancyGrid(coneshapes, facecolors, showPlot=True, showGroundTruth=True) # show coneshapes plotted on gridmap
+coneshapes_grid = gridMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=True, showGroundTruth=True) # show coneshapes plotted on gridmap
 
 # Phase III: Boundary Estimation
 # =========================================================
-router = trajectory_kvalues[1]
-be = be.boundaryEstimation(coneshapes, router)
-# a = coneshapes[0][0]
-# b = coneshapes[1][0]
-# c = coneshapes[2][0]  
-# d = coneshapes[3][0] 
-# k1 = b.difference(a)
-# k2 = c.difference(a)
-# k3 = d.difference(a)
+# Initialize new gridmap for estimated wall coordinates
+estimatedMap = grid_map.GridMap('')
+estimatedMap.plotTrajectory(trajectory_kvalues)
 
-# k2_2 = c.difference(k1)
+# Estimate wall coordinates
+wall_coordinates = be.boundaryEstimation(coneshapes)
+
+# Plot wall coordinates on grid map
+estimatedMap.plotWallCoordinates(wall_coordinates)
