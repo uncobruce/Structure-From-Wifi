@@ -10,17 +10,18 @@ import math
 
 def boundaryEstimation(kvalue_coneshapes):
     # input: kvalue_coneshapes after geometric difference calculated 
-    wall_coordinates = None
+    total_wall_coordinates = []
     for kval in kvalue_coneshapes:
         if kval == 0: continue
         poly = kvalue_coneshapes[kval]
         prevpoly = kvalue_coneshapes[kval-1] # TODO change to func for k2-k1 where there are multiple prev polys
         if type(poly) == list and kval == 1: # if multiple polys for kvalue
-            # for p in poly:
-            wall_coordinates = polygonHandler(poly[0], prevpoly)
+            for p in poly:
+                wall_coordinates = polygonHandler(p, prevpoly)
+                total_wall_coordinates+=wall_coordinates
         elif type(poly) == Polygon: # only one polygon
             pass #polyhandler
-    return wall_coordinates
+    return total_wall_coordinates
 
 def slope(x1, y1, x2, y2):
     if abs(x2-x1) == 0:
@@ -65,46 +66,62 @@ def y_range(polygon):
             miny = y
     return int(miny), int(maxy)
 
-def polygonVerticalWallCoordinates(polygon, x_coordinate, y_min, y_max):
+def polygonVerticalWallCoordinates(polygon, intersection):
+    ''' 
+    Given kj polygon and its intersection with its ki polygon, return list of coordinates matching vertical wall
+    :type polygon: Polygon
+    :type intersection: LineString
+    :rtype: list
+    '''
+    intersection_edge = intersection
+    distance_to_wall = wallHorizontalDistance(intersection_edge, polygon)
+    xStartPoint = intersection_edge.coords[0][0]
+    wall_x_coordinate = int(xStartPoint + distance_to_wall)
+    y_min, y_max = y_range(polygon)
     list_of_coords = []
     for j in range(y_min, y_max):
-        xcoord = x_coordinate
+        xcoord = wall_x_coordinate
         ycoord = j
         coord = (xcoord, ycoord)
         if Point(xcoord, ycoord).within(polygon):
             list_of_coords.append(coord)
     return list_of_coords
 
+
+def wallType(intersection):
+    ''' Determine whether wall is vertical or horizontal based on intersection slope'''
+    eps1, eps2, alpha = 8, 0.05, 1
+    x1, y1, x2, y2 = intersection.coords[0][0], intersection.coords[0][1], intersection.coords[1][0], intersection.coords[1][1]
+    m = slope(x1, y1, x2, y2)
+    norm = np.linalg.norm(np.array([x2,y2])-np.array([x1,y1])) # exclude lines with endpoints too close to one another
+    if (abs(m) > eps1) and norm > alpha: # If vertical wall found
+        return("vertical")
+    elif (abs(m) < eps2) and norm > alpha:
+        return("horizontal")
+
 def polygonHandler(poly, prevpoly):
     ''' :type poly: current kj Polygon (k_i-1) polygon being analyzed for walls
         :type prevpoly: ki Polygon being compared with kj polygon
         :rtype: wall coordinates 
     '''
-    wall_coordinates = None
-    eps1, eps2, alpha = 8, 0.05, 1
+    # Wall is located along direction of intersection
     intersection = poly.intersection(prevpoly)
+    wall_coordinates = None   
     if intersection.geom_type == 'GeometryCollection':
         for inter in intersection:
             if inter.geom_type == 'LineString':
-                x1, y1, x2, y2 = inter.coords[0][0], inter.coords[0][1], inter.coords[1][0], inter.coords[1][1]
-                m = slope(x1, y1, x2, y2)
-                norm = np.linalg.norm(np.array([x2,y2])-np.array([x1,y1]))
-                if (abs(m) > eps1) and norm > alpha: # If vertical wall found
+                wall_type = wallType(inter)
+                if wall_type == 'vertical': # If vertical wall found
                     print("Vertical wall found")
-                    intersection_edge = inter
-                    distance_to_wall = wallHorizontalDistance(intersection_edge, poly)
-                    wall_x_coordinate = int(x1 + distance_to_wall)
-                    y_min, y_max = y_range(poly)
-                    wall_coordinates = polygonVerticalWallCoordinates(poly, wall_x_coordinate, y_min, y_max)
+                    wall_coordinates = polygonVerticalWallCoordinates(poly, intersection)
                     
     elif intersection.geom_type == 'LineString':
-        x1, y1, x2, y2 = intersection.coords[0][0], intersection.coords[0][1], intersection.coords[1][0], intersection.coords[1][1]
-        m = slope(x1, y1, x2, y2)
-        norm = np.linalg.norm(np.array([x2,y2])-np.array([x1,y1]))
-        if (abs(m) > eps1) and norm > alpha: # Vertical wall found
-            print("Vertical wall found")
+        wall_type = wallType(intersection)
+        if wall_type == 'vertical': # Vertical wall found
+            print("Vertical wall found") 
+            wall_coordinates = polygonVerticalWallCoordinates(poly, intersection)
        
                 
-    print("\n")
+
     return wall_coordinates
 

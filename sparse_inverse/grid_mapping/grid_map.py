@@ -85,9 +85,10 @@ class GridMap:
             self.gridmap[coordy][coordx] = 0
         routerCoordinates = trajectory_kvalues[1]
         self.gridmap[routerCoordinates[1]][routerCoordinates[0]] = 0
-        self.plotGrid(self.gridmap)
+        # self.plotGrid(self.gridmap)
     
     def plotWallCoordinates(self, wall_coords):
+        
         for coord in wall_coords:
             coordx, coordy = coord[0], coord[1]
             self.gridmap[coordy][coordx] = 1
