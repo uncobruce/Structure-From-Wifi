@@ -6,7 +6,7 @@ import data_processing.kvisibility_algorithm as kvisibility_algorithm
 import grid_mapping.grid_map as grid_map
 import data_processing.associate_traj_kvals as associate_traj_kvals
 import geometric_analysis.coneshapes_grid as coneshapes
-import boundary_estimation as be
+import boundary_estimation.boundary_estimation_main as boundary_estimation
 
 class Floorplan:
     def __init__(self, floorplan_img_path):
@@ -68,7 +68,7 @@ estimatedMap = grid_map.GridMap('')
 estimatedMap.plotTrajectory(trajectory_kvalues)
 
 # Estimate wall coordinates
-wall_coordinates = be.boundaryEstimation(coneshapes)
+wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes)
 
-# Plot wall coordinates on grid map
+# # Plot wall coordinates on grid map
 estimatedMap.plotWallCoordinates(wall_coordinates)
