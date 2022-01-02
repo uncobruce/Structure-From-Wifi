@@ -16,15 +16,15 @@ class GridMap:
         self.desired_height, self.desired_width = desired_height, desired_width
         self.ground_truth_image = ground_truth_image
 
-    def plotFloorplanGroundTruth(self, ground_truth_image):
+    def plotFloorplanGroundTruth(self):
         ''' Draw ground truth map scaled to desired grid size. 
             Cell colour = 1: wall; Cell colour = 0: free space'''
         # Get input size
-        height, width = ground_truth_image.shape[:2]
+        height, width = self.ground_truth_image.shape[:2]
         # Desired "pixelated" size
         w, h = (500, 500)
         # Resize input to "pixelated" size
-        temp = cv2.resize(ground_truth_image, (w, h), interpolation=cv2.INTER_LINEAR)
+        temp = cv2.resize(self.ground_truth_image, (w, h), interpolation=cv2.INTER_LINEAR)
         # Initialize output image
         output = cv2.resize(temp, (self.desired_width-10, self.desired_height-10), interpolation=cv2.INTER_NEAREST)
         # Obtain coordinates of map points in image
@@ -40,7 +40,7 @@ class GridMap:
         mapCoordinates=np.array(mapCoordinates)  
         for coords in mapCoordinates:
             mapx, mapy = coords[0],coords[1]
-            self.gridmap[mapy-5][mapx+5] = 0
+            self.gridmap[mapy-5][mapx+5] = 1
         self.plotGrid(self.gridmap)
         return self.gridmap
     

@@ -59,7 +59,9 @@ gridMap.plotGrid(kvis_gridmap)
 # =========================================================
 cont_segs = coneshapes.continuousSegments(trajectory_kvalues)
 coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
-coneshapes_grid = gridMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=True, showGroundTruth=True) # show coneshapes plotted on gridmap
+# coneshapes_grid = gridMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=True, showGroundTruth=False) # show coneshapes plotted on gridmap
+gridMap.plotFloorplanGroundTruth()
+
 
 # Phase III: Boundary Estimation
 # =========================================================
@@ -68,7 +70,7 @@ estimatedMap = grid_map.GridMap('')
 estimatedMap.plotTrajectory(trajectory_kvalues)
 
 # Estimate wall coordinates
-wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes)
+wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes, trajectory_kvalues)
 
 # # Plot wall coordinates on grid map
 estimatedMap.plotWallCoordinates(wall_coordinates)

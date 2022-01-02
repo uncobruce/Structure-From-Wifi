@@ -1,16 +1,16 @@
 ''' Given a dictionary of kvalues: coneshapes, estimate wall locations and return their coordinates.'''
 
-from shapely.geometry import Point, Polygon, MultiPoint, LineString
-from shapely.ops import polygonize
-from shapely.ops import cascaded_union
-from descartes import PolygonPatch
+from shapely.geometry import Point, Polygon, MultiPoint, LineString, MultiLineString
+from shapely.ops import polygonize, cascaded_union
+from shapely import affinity
+from bresenham import bresenham
 import numpy as np
 import math
 import boundary_estimation.vertical_boundary_estimation as vertical_boundary_estimation 
 import boundary_estimation.horizontal_boundary_estimation as horizontal_boundary_estimation 
 
-def boundaryEstimation(kvalue_coneshapes):
-    # input: kvalue_coneshapes after geometric difference calculated 
+def boundaryEstimation(kvalue_coneshapes, trajectory_kvalues):
+    # Identifying Inner Walls
     total_wall_coordinates = []
     for kval in kvalue_coneshapes:
         if kval == 0: continue
@@ -20,10 +20,52 @@ def boundaryEstimation(kvalue_coneshapes):
             for p in poly:
                 wall_coordinates = polygonHandler(p, prevpoly)
                 total_wall_coordinates+=wall_coordinates
-        if type(poly) == Polygon: # only one polygon #TODO change back to elif
+        if type(poly) == Polygon: # only one polygon 
             wall_coordinates = polygonHandler(poly, prevpoly)
             total_wall_coordinates += wall_coordinates
+            
+    # Identifying Outer Walls
+    outer_wall_coords = outerWallCoordinates(trajectory_kvalues)
+    total_wall_coordinates += outer_wall_coords
+    # trajectory = list(trajectory_kvalues[0].keys())
+    
+    
+    # print(list(outerWallBoundingBox.exterior.coords))
     return total_wall_coordinates
+
+def outerWallCoordinates(trajectory_kvalues, offset_distance=1.1):
+    '''
+        Return a list of grid coordinates corresponding to the smallest envelope encompassing the coordinates
+        of the trajectory and the inner walls identified
+        :type trajectory_kvalues: list with 2 elements: [dict of {coord: kval}, (routerx, routery)]
+        :rtype: list
+    '''
+    outer_wall_coords = []
+    trajectory = list(trajectory_kvalues[0].keys())
+    trajectoryMultiPoint = MultiPoint(trajectory)
+    outer_wall_corners = trajectoryMultiPoint.envelope
+    outer_wall_corners = list(outer_wall_corners.exterior.coords)
+    outer_wall_lines = []
+    for i in range(len(outer_wall_corners)-1):
+        point1 = outer_wall_corners[i]
+        point2 = outer_wall_corners[i+1]
+        linestring = LineString([point1, point2])
+        outer_wall_lines+=list(linestring.coords)
+    
+    inner_bounding_box = Polygon(outer_wall_lines)
+    inner_bounding_box_scaled = affinity.scale(inner_bounding_box, xfact=offset_distance, yfact=offset_distance)
+    
+    outer_wall_lines=list(inner_bounding_box_scaled.exterior.coords)
+    for i in range(len(outer_wall_lines)-1):
+        p1 = (int(outer_wall_lines[i][0]), int(outer_wall_lines[i][1]))
+        p2 = (int(outer_wall_lines[i+1][0]), int(outer_wall_lines[i+1][1]))
+        
+        line = list(bresenham(p1[0],p1[1], p2[0],p2[1]))
+        outer_wall_coords+=line
+    return outer_wall_coords
+
+
+
 
 def previousPolygon(prevpoly, poly):
     '''
@@ -55,7 +97,6 @@ def wallType(intersection):
     x1, y1, x2, y2 = intersection.coords[0][0], intersection.coords[0][1], intersection.coords[1][0], intersection.coords[1][1]
     m = slope(x1, y1, x2, y2)
     norm = np.linalg.norm(np.array([x2,y2])-np.array([x1,y1])) # exclude lines with endpoints too close to one another
-    print(m, intersection)
     
     if (abs(m) > eps1) and norm > alpha:
         return("vertical")
