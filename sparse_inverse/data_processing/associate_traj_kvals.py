@@ -24,7 +24,7 @@ class trajectoryObject:
                 trajEndPoints.append(end_point)
                 
         
-        trajEndPoints = smooth_trajectory.smoothTrajectory(trajEndPoints)
+        # trajEndPoints = smooth_trajectory.smoothTrajectory(trajEndPoints)
         
         # convert endpoints to list of lines
         linestoplot=[]
@@ -78,15 +78,7 @@ class trajectoryObject:
               
                     self.trajectory_kvalues_dict[point] = correspKValue 
     
-                else:
-                    correspKValColor = nearestcolor(correspKValColor, self.kvaluescolordict.keys())
-                    point_index = self.trajectoryCoordinates.index(point)
-                    prev_point = self.trajectoryCoordinates[point_index - 3]
-                    
-                    correspKValColor = self.kvis_gridmap[prev_point[1]][prev_point[0]]  
-                    correspKValue = self.kvaluescolordict[correspKValColor]
-              
-                    self.trajectory_kvalues_dict[point] = correspKValue 
+     
                 
                 
     def getTrajectoryKValuesObject(self):

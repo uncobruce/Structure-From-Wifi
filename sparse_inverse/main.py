@@ -48,7 +48,7 @@ gridMap = grid_map.GridMap(floorplan.image)
 kvis_gridmap = gridMap.plotKVisibilityMap(kvisibility_map_image, showPlot=False)
 
 # Obtain traj-kvals data object scaled to gridmap
-trajectory_endpts_path = "random_trajectories/traj_2.txt" 
+trajectory_endpts_path = "random_trajectories/traj_1.txt" 
 kvisplot_path = "data_processing/kvis_plot.png"
 trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path, gridWidth, gridHeight, routerpoint, unscaled_axis_limits, kvaluescolordict, kvis_gridmap)
 trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
@@ -60,12 +60,12 @@ gridMap.plotTrajectory(trajectory_kvalues)
 
 # # Phase II: Geometric Analysis
 # # =========================================================
-# cont_segs = coneshapes.continuousSegments(trajectory_kvalues)
-# coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
-# # coneshapes_grid = gridMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=True, showGroundTruth=False) # show coneshapes plotted on gridmap
+cont_segs = coneshapes.continuousSegments(trajectory_kvalues)
+coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
+# coneshapes_grid = gridMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=True, showGroundTruth=False) # show coneshapes plotted on gridmap
 # gridMap.plotFloorplanGroundTruth()
 
 
 # # Phase III: Boundary Estimation
 # # =========================================================
-# wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes, trajectory_kvalues)
+wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes, trajectory_kvalues)
