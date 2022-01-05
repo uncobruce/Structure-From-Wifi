@@ -6,6 +6,7 @@ import data_processing.kvisibility_algorithm as kvisibility_algorithm
 import grid_mapping.grid_map as grid_map
 import data_processing.associate_traj_kvals as associate_traj_kvals
 import geometric_analysis.coneshapes_grid as coneshapes
+import data_processing.smooth_trajectory as smooth_trajectory
 import boundary_estimation.boundary_estimation_main as boundary_estimation
 
 class Floorplan:
@@ -47,30 +48,24 @@ gridMap = grid_map.GridMap(floorplan.image)
 kvis_gridmap = gridMap.plotKVisibilityMap(kvisibility_map_image, showPlot=False)
 
 # Obtain traj-kvals data object scaled to gridmap
-trajectory_endpts_path = "random_trajectories/traj_1.txt" 
+trajectory_endpts_path = "random_trajectories/traj_2.txt" 
 kvisplot_path = "data_processing/kvis_plot.png"
 trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path, gridWidth, gridHeight, routerpoint, unscaled_axis_limits, kvaluescolordict, kvis_gridmap)
 trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
 
 gridMap.plotGrid(kvis_gridmap)
 
+# Plot trajectory
+gridMap.plotTrajectory(trajectory_kvalues)
 
-# Phase II: Geometric Analysis
-# =========================================================
-cont_segs = coneshapes.continuousSegments(trajectory_kvalues)
-coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
-# coneshapes_grid = gridMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=True, showGroundTruth=False) # show coneshapes plotted on gridmap
-gridMap.plotFloorplanGroundTruth()
+# # Phase II: Geometric Analysis
+# # =========================================================
+# cont_segs = coneshapes.continuousSegments(trajectory_kvalues)
+# coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
+# # coneshapes_grid = gridMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=True, showGroundTruth=False) # show coneshapes plotted on gridmap
+# gridMap.plotFloorplanGroundTruth()
 
 
-# Phase III: Boundary Estimation
-# =========================================================
-# # Initialize new gridmap for estimated wall coordinates
-# estimatedMap = grid_map.GridMap('')
-# estimatedMap.plotTrajectory(trajectory_kvalues)
-
-# # Estimate wall coordinates
-wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes, trajectory_kvalues)
-
-# # # Plot wall coordinates on grid map
-# estimatedMap.plotWallCoordinates(wall_coordinates)
+# # Phase III: Boundary Estimation
+# # =========================================================
+# wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes, trajectory_kvalues)

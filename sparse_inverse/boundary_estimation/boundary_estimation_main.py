@@ -233,7 +233,6 @@ def previousPolygon(prevpoly, poly):
 
 
 
-
 def slope(x1, y1, x2, y2):
     if abs(x2-x1) == 0:
         return math.inf
