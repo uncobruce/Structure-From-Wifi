@@ -30,17 +30,19 @@ def boundaryEstimation(kvalue_coneshapes, trajectory_kvalues):
         inner_line_segments=[]
         if type(poly) == list: # if multiple polys for kvalue
             for p in poly:
+                
                 wall_coordinates = polygonHandler(p, prevpoly)
-                total_wall_coordinates+=wall_coordinates
-                inner_line_segments.append(wall_coordinates)
-        if type(poly) == Polygon: # only one polygon 
-            wall_coordinates = polygonHandler(poly, prevpoly)
+                print(kval, wall_coordinates)
+                if poly.index(p) == 0:
+                    constant_value, constant_index = getWallConstants(wall_coordinates)
+                else:
+                    wall_coordinates = smoothCoordinates(wall_coordinates, constant_value, constant_index)
             total_wall_coordinates += wall_coordinates
             inner_line_segments.append(wall_coordinates)
         extended_segments = mapCompletion(inner_line_segments, outer_wall_coords)
         for seg in extended_segments:
             total_wall_coordinates += seg
-  
+        print(inner_line_segments, "\n")
     # Remove coordinates coinciding with the trajectory
     trajectory = list(trajectory_kvalues[0].keys())
     for coord in trajectory:
@@ -50,6 +52,28 @@ def boundaryEstimation(kvalue_coneshapes, trajectory_kvalues):
     estimatedMap = estimatedMap.plotWallCoordinates(total_wall_coordinates)    
     
     return total_wall_coordinates
+
+def getWallConstants(wall_coordinates):
+    if wall_coordinates == []: return None, None
+    startpt, endpt = wall_coordinates[0], wall_coordinates[-1]
+    if startpt[0] == endpt[0]:
+        return startpt[0], 0
+    elif startpt[1] == endpt[1]:
+        return startpt[1], 1
+
+def smoothCoordinates(wall_coordinates, constant_value, constant_index): 
+    ''' Ensure coordinates have the same constant (x/y) value'''
+    new_wall_coordinates=[]
+    for coord in wall_coordinates:
+        if constant_index == 0:
+            new_coord = (constant_value, coord[1])
+            new_wall_coordinates.append(new_coord)
+        elif constant_index == 1:
+            new_coord = (coord[0], constant_value)
+            new_wall_coordinates.append(new_coord)
+    
+    return new_wall_coordinates
+
 
 def closestpoint(outer_wall_coords, point):
     shortest_dist = None
@@ -204,13 +228,6 @@ def previousPolygon(prevpoly, poly):
             if p.intersects(poly):
                 return p
 
-def smoothCoordinates(wall_coordinates): #TODO complete
-    ''' Ensure coordinates have the same constant (x/y) value'''
-    for coord in wall_coordinates:
-        pass
-
-
-
 
 
 def slope(x1, y1, x2, y2):
@@ -267,5 +284,6 @@ def polygonHandler(poly, prevpoly):
                     wall_coordinates += vertical_boundary_estimation.polygonVerticalWallCoordinates(poly, inter)   
                 elif wall_type == 'horizontal':
                     wall_coordinates += horizontal_boundary_estimation.polygonHorizontalWallCoordinates(poly, inter)   
+    
     return wall_coordinates
 

@@ -22,10 +22,7 @@ class trajectoryObject:
                 end_point = (int(line[0:2]), int(line[3:-2])) 
                 trajEndPoints.append(end_point)
                 
-<<<<<<< HEAD
 
-=======
->>>>>>> parent of 6f216e7 (Added erratic trajectory)
         # convert endpoints to list of lines
         linestoplot=[]
         for i in range(len(trajEndPoints)-1):
@@ -68,8 +65,6 @@ class trajectoryObject:
                 self.trajectory_kvalues_dict[point] = correspKValue
          
             else: # if point colour not found, take the colour of a point behind it
-<<<<<<< HEAD
-
                 if correspKValColor in self.kvaluescolordict.keys():
                     
                     point_index = self.trajectoryCoordinates.index(point)
@@ -80,25 +75,7 @@ class trajectoryObject:
               
                     self.trajectory_kvalues_dict[point] = correspKValue 
     
-     
 
-                point_index = self.trajectoryCoordinates.index(point)
-                prev_point = self.trajectoryCoordinates[point_index - 3]
-
-
-                point_index = self.trajectoryCoordinates.index(point)
-                prev_point = self.trajectoryCoordinates[point_index - 3]
-                
-
-=======
-                point_index = self.trajectoryCoordinates.index(point)
-                prev_point = self.trajectoryCoordinates[point_index - 3]
-                
->>>>>>> parent of 6f216e7 (Added erratic trajectory)
-                correspKValColor = self.kvis_gridmap[prev_point[1]][prev_point[0]]  
-                correspKValue = self.kvaluescolordict[correspKValColor]
-          
-                self.trajectory_kvalues_dict[point] = correspKValue 
     
     def getTrajectoryKValuesObject(self):
         self.obtainTrajectoryCoordinates()
