@@ -25,9 +25,11 @@ def boundaryEstimation(kvalue_coneshapes, trajectory_kvalues):
     # Identifying Inner Walls
     for kval in kvalue_coneshapes:
         if kval == 0: continue
+    
         poly = kvalue_coneshapes[kval]
         prevpoly = previousPolygon(kvalue_coneshapes[kval-1], poly) 
         inner_line_segments=[]
+        
         if type(poly) == list: # if multiple polys for kvalue
             for p in poly:
                 # print(p, kval)
@@ -52,7 +54,7 @@ def boundaryEstimation(kvalue_coneshapes, trajectory_kvalues):
     for coord in trajectory:
         if coord in total_wall_coordinates:
             total_wall_coordinates.remove(coord)
-    
+        
     estimatedMap = estimatedMap.plotWallCoordinates(total_wall_coordinates)    
     
     return total_wall_coordinates
@@ -259,10 +261,13 @@ def polygonHandler(poly, prevpoly):
         :rtype: wall coordinates 
     '''
     # Wall is located in the same direction as the intersection line
+    
     intersection = poly.intersection(prevpoly)
     wall_coordinates = []  
     if intersection.geom_type == 'GeometryCollection':
+        print(poly)
         for inter in intersection:
+            print(inter)
             if inter.geom_type == 'LineString':
                 wall_type = wallType(inter)
                 if wall_type == 'vertical': 
@@ -270,8 +275,10 @@ def polygonHandler(poly, prevpoly):
                     wall_coordinates += vertical_boundary_estimation.polygonVerticalWallCoordinates(poly, inter)   
                 elif wall_type == 'horizontal':
                     wall_coordinates += horizontal_boundary_estimation.polygonHorizontalWallCoordinates(poly, inter)   
+        print("\n")
            
     elif intersection.geom_type == 'LineString':
+        
         wall_coordinates = []
         wall_type = wallType(intersection)
         if wall_type == 'vertical': 
