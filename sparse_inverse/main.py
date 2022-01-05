@@ -54,6 +54,7 @@ trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
 
 gridMap.plotGrid(kvis_gridmap)
 
+<<<<<<< HEAD
 
 
 # # Phase II: Geometric Analysis
@@ -62,8 +63,27 @@ cont_segs = coneshapes.continuousSegments(trajectory_kvalues)
 coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
 coneshapes_grid = gridMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=True, showGroundTruth=False) # show coneshapes plotted on gridmap
 # gridMap.plotFloorplanGroundTruth()
+=======
+
+# Phase II: Geometric Analysis
+# =========================================================
+cont_segs = coneshapes.continuousSegments(trajectory_kvalues)
+coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
+# coneshapes_grid = gridMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=True, showGroundTruth=False) # show coneshapes plotted on gridmap
+gridMap.plotFloorplanGroundTruth()
 
 
+# Phase III: Boundary Estimation
+# =========================================================
+# # Initialize new gridmap for estimated wall coordinates
+# estimatedMap = grid_map.GridMap('')
+# estimatedMap.plotTrajectory(trajectory_kvalues)
+>>>>>>> parent of 6f216e7 (Added erratic trajectory)
+
+# # Estimate wall coordinates
+wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes, trajectory_kvalues)
+
+<<<<<<< HEAD
 # Phase III: Boundary Estimation
 # =========================================================
 # # Initialize new gridmap for estimated wall coordinates
@@ -73,3 +93,7 @@ coneshapes_grid = gridMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=
 # # Estimate wall coordinates
 wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes, trajectory_kvalues)
 
+=======
+# # # Plot wall coordinates on grid map
+# estimatedMap.plotWallCoordinates(wall_coordinates)
+>>>>>>> parent of 6f216e7 (Added erratic trajectory)
