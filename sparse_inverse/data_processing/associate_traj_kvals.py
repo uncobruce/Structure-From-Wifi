@@ -2,7 +2,6 @@
     k-values, and the router point for the desired grid size.'''
 from bresenham import bresenham
 from matplotlib import colors as colors
-import data_processing.smooth_trajectory as smooth_trajectory
 
 class trajectoryObject:
     
@@ -20,12 +19,10 @@ class trajectoryObject:
         # parse text file and obtain end points
         with open(self.trajectoryEndPointsPath, "r") as trajectoryEndPointsFile:
             for line in trajectoryEndPointsFile:
-                end_point = (int(float(line[0:2])), int(float(line[3:-2]))) 
+                end_point = (int(line[0:2]), int(line[3:-2])) 
                 trajEndPoints.append(end_point)
                 
-        
-        # trajEndPoints = smooth_trajectory.smoothTrajectory(trajEndPoints)
-        
+
         # convert endpoints to list of lines
         linestoplot=[]
         for i in range(len(trajEndPoints)-1):
@@ -46,17 +43,17 @@ class trajectoryObject:
     
         
     def obtainTrajectoryKValues(self):
-        def nearestcolor(color, colorslist): 
-            r, g, b = color[0], color[1], color[2]
+        # def nearestcolor(color, colorslist): 
+        #     r, g, b = color[0], color[1], color[2]
             
-            smallest_distance, closest_color = 0, None
-            for other_color in colorslist:
-                r2, g2, b2 = int(other_color[0]), int(other_color[1]),int( other_color[2]) #conv to int to avoid runtime warning
-                distance = abs(r2 - r) + abs(g2 - g) + abs(b2 - b)
-                if distance < smallest_distance or closest_color == None:
-                    smallest_distance = distance
-                    closest_color = other_color
-            return closest_color
+        #     smallest_distance, closest_color = 0, None
+        #     for other_color in colorslist:
+        #         r2, g2, b2 = int(other_color[0]), int(other_color[1]),int( other_color[2]) #conv to int to avoid runtime warning
+        #         distance = abs(r2 - r) + abs(g2 - g) + abs(b2 - b)
+        #         if distance < smallest_distance or closest_color == None:
+        #             smallest_distance = distance
+        #             closest_color = other_color
+        #     return closest_color
             
         self.trajectory_kvalues_dict = {}
       
@@ -68,6 +65,7 @@ class trajectoryObject:
                 self.trajectory_kvalues_dict[point] = correspKValue
          
             else: # if point colour not found, take the colour of a point behind it
+
                 if correspKValColor in self.kvaluescolordict.keys():
                     
                     point_index = self.trajectoryCoordinates.index(point)
@@ -79,8 +77,20 @@ class trajectoryObject:
                     self.trajectory_kvalues_dict[point] = correspKValue 
     
      
+
+                point_index = self.trajectoryCoordinates.index(point)
+                prev_point = self.trajectoryCoordinates[point_index - 3]
+
+
+                point_index = self.trajectoryCoordinates.index(point)
+                prev_point = self.trajectoryCoordinates[point_index - 3]
                 
-                
+
+                correspKValColor = self.kvis_gridmap[prev_point[1]][prev_point[0]]  
+                correspKValue = self.kvaluescolordict[correspKValColor]
+          
+                self.trajectory_kvalues_dict[point] = correspKValue 
+    
     def getTrajectoryKValuesObject(self):
         self.obtainTrajectoryCoordinates()
         self.obtainTrajectoryKValues()

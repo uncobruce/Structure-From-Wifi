@@ -204,26 +204,13 @@ def previousPolygon(prevpoly, poly):
             if p.intersects(poly):
                 return p
 
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> parent of 8c12402 (smooth coordinates of same kval so they have the same constant value)
-=======
->>>>>>> parent of 8c12402 (smooth coordinates of same kval so they have the same constant value)
 def smoothCoordinates(wall_coordinates): #TODO complete
     ''' Ensure coordinates have the same constant (x/y) value'''
     for coord in wall_coordinates:
         pass
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> parent of 8c12402 (smooth coordinates of same kval so they have the same constant value)
-=======
->>>>>>> parent of 8c12402 (smooth coordinates of same kval so they have the same constant value)
-=======
->>>>>>> parent of 8c12402 (smooth coordinates of same kval so they have the same constant value)
+
+
+
 
 def slope(x1, y1, x2, y2):
     if abs(x2-x1) == 0:
