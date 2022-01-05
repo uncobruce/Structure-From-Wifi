@@ -207,7 +207,10 @@ def previousPolygon(prevpoly, poly):
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> parent of 8c12402 (smooth coordinates of same kval so they have the same constant value)
 =======
 >>>>>>> parent of 8c12402 (smooth coordinates of same kval so they have the same constant value)
 def smoothCoordinates(wall_coordinates): #TODO complete
@@ -215,6 +218,9 @@ def smoothCoordinates(wall_coordinates): #TODO complete
     for coord in wall_coordinates:
         pass
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> parent of 8c12402 (smooth coordinates of same kval so they have the same constant value)
+=======
 >>>>>>> parent of 8c12402 (smooth coordinates of same kval so they have the same constant value)
 =======
 >>>>>>> parent of 8c12402 (smooth coordinates of same kval so they have the same constant value)
