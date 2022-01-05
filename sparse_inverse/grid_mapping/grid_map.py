@@ -91,8 +91,11 @@ class GridMap:
         
         for coord in wall_coords:
             coordx, coordy = coord[0], coord[1]
+            # if self.gridmap[coordy][coordx] == 1:
+            #     break # for removing overcrossing lines
             self.gridmap[coordy][coordx] = 1
         self.plotGrid(self.gridmap)
+        return self.gridmap
     
     def plotKValueConeshapes(self, kvalue_coneshapes, facecolors, showPlot=True, showGroundTruth=True, resetGrid=False):
         # Reshape gridmap to accept RGB values as array elements

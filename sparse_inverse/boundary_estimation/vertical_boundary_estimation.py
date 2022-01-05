@@ -26,7 +26,7 @@ def wallHorizontalDistance(intersection_edge, polygon):
             closest_vertex = coord
             shortest_distance = horizontal_distance
     
-    return 1+shortest_distance//2 # adding 1 seems more accurate for some reason
+    return shortest_distance//2 # adding 1 seems more accurate for some reason
 
 
 

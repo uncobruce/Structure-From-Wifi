@@ -65,12 +65,12 @@ gridMap.plotFloorplanGroundTruth()
 
 # Phase III: Boundary Estimation
 # =========================================================
-# Initialize new gridmap for estimated wall coordinates
-estimatedMap = grid_map.GridMap('')
-estimatedMap.plotTrajectory(trajectory_kvalues)
+# # Initialize new gridmap for estimated wall coordinates
+# estimatedMap = grid_map.GridMap('')
+# estimatedMap.plotTrajectory(trajectory_kvalues)
 
-# Estimate wall coordinates
+# # Estimate wall coordinates
 wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes, trajectory_kvalues)
 
-# # Plot wall coordinates on grid map
-estimatedMap.plotWallCoordinates(wall_coordinates)
+# # # Plot wall coordinates on grid map
+# estimatedMap.plotWallCoordinates(wall_coordinates)

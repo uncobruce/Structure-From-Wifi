@@ -26,7 +26,7 @@ def wallVerticalDistance(intersection_edge, polygon):
             closest_vertex = coord
             shortest_distance = vertical_distance
     
-    return shortest_distance//2 -1# adding 1 seems more accurate for some reason
+    return shortest_distance//2
 
 def x_range(polygon):
     '''Obtain minimum and maximum x given a Polygon'''
