@@ -12,9 +12,12 @@ from matplotlib import colors as colors
 
 ''' Given contour coordinates, plot k-visibility region.'''
 def plotKVisRegion(contour_coordinates, showPlot=True, showBorders=False, saveImage=True):
+    
     contour = np.squeeze(contour_coordinates)
     poly = Polygon(contour)
+    plt.plot(*poly.exterior.xy,'k')
     
+    plt.show()
     def removeClosePoints(points):
         points2 = points.copy()
         for i in range(len(points2)-1):
@@ -27,6 +30,7 @@ def plotKVisRegion(contour_coordinates, showPlot=True, showBorders=False, saveIm
     
     # Define plot x limits and y limits
     coordinates = list(poly.exterior.coords)
+    
     coords2 = np.array(coordinates)
     xcoords, ycoords = coords2[:,0], coords2[:,1]
     xmin, xmax = min(xcoords), max(xcoords)

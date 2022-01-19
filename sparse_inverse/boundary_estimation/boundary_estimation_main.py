@@ -46,9 +46,9 @@ def boundaryEstimation(kvalue_coneshapes, trajectory_kvalues):
             wall_coordinates = polygonHandler(poly, prevpoly)
             total_wall_coordinates += wall_coordinates
             inner_line_segments.append(wall_coordinates)
-        extended_segments = mapCompletion(inner_line_segments, outer_wall_coords)
-        for seg in extended_segments:
-            total_wall_coordinates += seg
+        # extended_segments = mapCompletion(inner_line_segments, outer_wall_coords)
+        # for seg in extended_segments:
+        #     total_wall_coordinates += seg
     # Remove coordinates coinciding with the trajectory
     trajectory = list(trajectory_kvalues[0].keys())
     for coord in trajectory:
@@ -77,7 +77,6 @@ def smoothCoordinates(wall_coordinates, constant_value, constant_index):
         elif constant_index == 1:
             new_coord = (coord[0], constant_value)
             new_wall_coordinates.append(new_coord)
-    print(new_wall_coordinates, wall_coordinates)
     return new_wall_coordinates
 
 def closestpoint(outer_wall_coords, point):
@@ -265,9 +264,7 @@ def polygonHandler(poly, prevpoly):
     intersection = poly.intersection(prevpoly)
     wall_coordinates = []  
     if intersection.geom_type == 'GeometryCollection':
-        print(poly)
         for inter in intersection:
-            print(inter)
             if inter.geom_type == 'LineString':
                 wall_type = wallType(inter)
                 if wall_type == 'vertical': 
@@ -275,7 +272,6 @@ def polygonHandler(poly, prevpoly):
                     wall_coordinates += vertical_boundary_estimation.polygonVerticalWallCoordinates(poly, inter)   
                 elif wall_type == 'horizontal':
                     wall_coordinates += horizontal_boundary_estimation.polygonHorizontalWallCoordinates(poly, inter)   
-        print("\n")
            
     elif intersection.geom_type == 'LineString':
         
@@ -292,7 +288,6 @@ def polygonHandler(poly, prevpoly):
             if inter.geom_type == 'LineString':
                 wall_type = wallType(inter)
                 if wall_type == 'vertical': 
-                    print(inter)
                     wall_coordinates += vertical_boundary_estimation.polygonVerticalWallCoordinates(poly, inter)   
                 elif wall_type == 'horizontal':
                     wall_coordinates += horizontal_boundary_estimation.polygonHorizontalWallCoordinates(poly, inter)   

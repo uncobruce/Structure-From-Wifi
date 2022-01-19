@@ -85,7 +85,7 @@ class GridMap:
             self.gridmap[coordy][coordx] = 0
         routerCoordinates = trajectory_kvalues[1]
         self.gridmap[routerCoordinates[1]][routerCoordinates[0]] = 0
-        # self.plotGrid(self.gridmap)
+        self.plotGrid(self.gridmap)
     
     def plotWallCoordinates(self, wall_coords):
         
@@ -97,7 +97,7 @@ class GridMap:
         self.plotGrid(self.gridmap)
         return self.gridmap
     
-    def plotKValueConeshapes(self, kvalue_coneshapes, facecolors, showPlot=True, showGroundTruth=True, resetGrid=False):
+    def plotKValueConeshapes(self, kvalue_coneshapes, facecolors, showPlot=True, showGroundTruth=False, resetGrid=False):
         # Reshape gridmap to accept RGB values as array elements
         self.gridmap = np.stack((self.gridmap,)*3, axis=-1)  
         
