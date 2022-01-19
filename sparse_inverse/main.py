@@ -9,15 +9,10 @@ import data_processing.associate_traj_kvals as associate_traj_kvals
 import data_processing.square_trajectory as square_trajectory
 import geometric_analysis.coneshapes_grid as coneshapes
 import boundary_estimation.boundary_estimation_main as boundary_estimation
-
+import boundary_estimation.ray_drawing as ray_drawing
 class Floorplan:
     def __init__(self, floorplan_img_path):
         self.image = cv2.imread(floorplan_img_path)
-        # image_inverted = cv2.bitwise_not(self.image)
-        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (200,200))
-        
-        # result = 255 - cv2.morphologyEx(image_inverted, cv2.MORPH_CLOSE, kernel, iterations=1)
-        
         self.map_contour = drawcontours.contours(self.image)
         self.map_contour = np.squeeze(self.map_contour)
         self.floorplanPolygon = Polygon(self.map_contour)
@@ -57,18 +52,20 @@ kvis_gridmap = gridMap.plotKVisibilityMap(kvisibility_map_image, showPlot=True)
 gridMap.plotFloorplanGroundTruth()
 
 # Obtain traj-kvals data object scaled to gridmap
-trajectory_endpts_path = "random_trajectories/traj_2.txt" 
+trajectory_endpts_path = "random_trajectories/traj_3.txt" 
 kvisplot_path = "data_processing/kvis_plot.png"
 trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path, gridWidth, gridHeight, routerpoint, unscaled_axis_limits, kvaluescolordict, kvis_gridmap)
 trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
 gridMap.plotGrid(kvis_gridmap)
 
-
-
-
+gridMap.plotTrajectory(trajectory_kvalues)
 # =============================================================================
-# Boundary Estimation
+# Ray Drawing Algorithm
 # =============================================================================
 estimatedMap = grid_map.GridMap('')
-# estimatedMap.plotTrajectory(trajectory_kvalues)
+free_space_coords, wall_coords = ray_drawing.wallEstimation(trajectory_kvalues)
+
+estimatedMap.plotFreeSpace(free_space_coords)
+estimatedMap.plotWallCoordinates(wall_coords)
+
 # estimatedMap.plotWallCoordinates(wall_coords)
