@@ -9,7 +9,6 @@ import data_processing.associate_traj_kvals as associate_traj_kvals
 import data_processing.square_trajectory as square_trajectory
 import geometric_analysis.coneshapes_grid as coneshapes
 import boundary_estimation.boundary_estimation_main as boundary_estimation
-import boundary_estimation.line_boundary_estimation as be
 
 class Floorplan:
     def __init__(self, floorplan_img_path):
@@ -70,27 +69,6 @@ gridMap.plotGrid(kvis_gridmap)
 # =============================================================================
 # Boundary Estimation
 # =============================================================================
-
-# wall_coords = be.boundaryEstimator(trajectory_kvalues)
-# estimatedMap = grid_map.GridMap('')
-# estimatedMap.plotTrajectory(trajectory_kvalues)
-# estimatedMap.plotWallCoordinates(wall_coords)
-# # # Phase II: Geometric Analysis
-# # # =========================================================
-# cont_segs = coneshapes.continuousSegments(trajectory_kvalues)
 estimatedMap = grid_map.GridMap('')
 # estimatedMap.plotTrajectory(trajectory_kvalues)
-coneshapes = coneshapes.coneshapes(trajectory_kvalues, trajectoryObject.routerCoords)
-coneshapes_grid = estimatedMap.plotKValueConeshapes(coneshapes, facecolors, showPlot=True, showGroundTruth=False) # show coneshapes plotted on gridmap
-# gridMap.plotTrajectory(trajectory_kvalues)
-# gridMap.plotFloorplanGroundTruth()
-
-
-
-# # Phase III: Boundary Estimation
-# # =========================================================
-# # # Initialize new gridmap for estimated wall coordinates
-
-
-# # # Estimate wall coordinates
-wall_coordinates = boundary_estimation.boundaryEstimation(coneshapes, trajectory_kvalues)
+# estimatedMap.plotWallCoordinates(wall_coords)
