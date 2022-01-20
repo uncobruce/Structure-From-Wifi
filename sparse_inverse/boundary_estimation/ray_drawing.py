@@ -1,5 +1,8 @@
 import numpy as np
 from bresenham import bresenham
+from shapely.geometry import Point, Polygon, MultiPoint, LineString, MultiLineString
+from shapely import affinity
+
 def wallEstimation(trajectory_kvalues):
     # 1. Separate trajectory based on k-values
     kvalue_coords_map = continuousSegments(trajectory_kvalues)
@@ -8,13 +11,19 @@ def wallEstimation(trajectory_kvalues):
     free_space_coords, new_k0_coords = findFreeSpace(trajectory_kvalues, kvalue_coords_map[0])
     kvalue_coords_map[0] += new_k0_coords
     
-    # 3. Predit wall coordinates for ki ... kn, i = 1 to n
+    # 3. Predit inner wall coordinates for ki ... kn, i = 1 to n
     wall_coords = []
-    # wall_coords = iterativeAverage(kvalue_coords_map[1], kvalue_coords_map[0], trajectory_kvalues)
     for ki in kvalue_coords_map.keys():
         if ki==0: continue
-        # print(kvalue_coords_map[ki], kvalue_coords_map[ki-1])
         wall_coords += iterativeAverage(ki,kvalue_coords_map[ki], kvalue_coords_map[ki-1], trajectory_kvalues)
+        
+    # 4. Bounding box 
+    # Identifying Outer Walls
+    outer_wall_coords = outerWallCoordinates(trajectory_kvalues)
+    
+    
+    
+    wall_coords += outer_wall_coords
     return free_space_coords, wall_coords
 
 # =============================================================================
@@ -80,13 +89,15 @@ def iterativeAverage(kval, ki_coords, kj_coords, trajectory_kvalues):
         constant_wall_value = int(np.mean(x)) - int(np.mean(x)-min(ki_coords[:,0])+1) 
         print('x mean:',np.mean(x))
         varying_wall_values = list(y) 
+        # varying_wall_values = [i for i in range(5,75)] 
         wall_coords = [(constant_wall_value, int(varying_coord)) for varying_coord in varying_wall_values]
         print(wall_coords)
         return wall_coords
     if vary < varx:
-        constant_wall_value = int(np.mean(y))  - int(np.mean(y)-min(ki_coords[:,0])+1) 
+        constant_wall_value = int(np.mean(y))  - int(np.mean(y)-min(ki_coords[:,1])+1) 
         print('y mean:',np.mean(y))
         varying_wall_values = list(x) 
+        # varying_wall_values = [i for i in range(5,75)] 
         wall_coords = [(int(varying_coord),constant_wall_value) for varying_coord in varying_wall_values]
         print(wall_coords)
         return wall_coords
@@ -98,4 +109,39 @@ def midpoint(endpoint1, endpoint2):
     x_midpoint = (endpoint1[0]+endpoint2[0])/2
     y_midpoint = (endpoint1[1]+endpoint2[1])/2
     return (x_midpoint,y_midpoint)
+# =============================================================================
+# =============================================================================
+# Step 4
+def outerWallCoordinates(trajectory_kvalues, offset_distance=1.1):
+    '''
+        Return a list of grid coordinates corresponding to the smallest envelope encompassing the coordinates
+        of the trajectory and the inner walls identified
+        :type trajectory_kvalues: list with 2 elements: [dict of {coord: kval}, (routerx, routery)]
+        :rtype: list
+    '''
+    outer_wall_coords = []
+    trajectory = list(trajectory_kvalues[0].keys())
+    trajectoryMultiPoint = MultiPoint(trajectory)
+    outer_wall_corners = trajectoryMultiPoint.envelope
+    outer_wall_corners = list(outer_wall_corners.exterior.coords)
+    outer_wall_lines = []
+    for i in range(len(outer_wall_corners)-1):
+        point1 = outer_wall_corners[i]
+        point2 = outer_wall_corners[i+1]
+        linestring = LineString([point1, point2])
+        outer_wall_lines+=list(linestring.coords)
+    
+    inner_bounding_box = Polygon(outer_wall_lines)
+    inner_bounding_box_scaled = affinity.scale(inner_bounding_box, xfact=offset_distance, yfact=offset_distance)
+    
+    outer_wall_lines=list(inner_bounding_box_scaled.exterior.coords)
+    for i in range(len(outer_wall_lines)-1):
+        p1 = (int(outer_wall_lines[i][0]), int(outer_wall_lines[i][1]))
+        p2 = (int(outer_wall_lines[i+1][0]), int(outer_wall_lines[i+1][1]))
+        
+        line = list(bresenham(p1[0],p1[1], p2[0],p2[1]))
+        outer_wall_coords+=line
+    return outer_wall_coords 
+
+
 # =============================================================================
