@@ -14,7 +14,7 @@ def wallEstimation(trajectory_kvalues):
     for ki in kvalue_coords_map.keys():
         if ki==0: continue
         # print(kvalue_coords_map[ki], kvalue_coords_map[ki-1])
-        wall_coords += iterativeAverage(kvalue_coords_map[ki], kvalue_coords_map[ki-1], trajectory_kvalues)
+        wall_coords += iterativeAverage(ki,kvalue_coords_map[ki], kvalue_coords_map[ki-1], trajectory_kvalues)
     return free_space_coords, wall_coords
 
 # =============================================================================
@@ -54,7 +54,7 @@ def findFreeSpace(trajectory_kvalues, k0_coords):
 # =============================================================================
 # =============================================================================
 # For Step 3
-def iterativeAverage(ki_coords, kj_coords, trajectory_kvalues):
+def iterativeAverage(kval, ki_coords, kj_coords, trajectory_kvalues):
     router = trajectory_kvalues[1]
     kj_startpt = router
     wall_midpoints=[]
@@ -62,30 +62,33 @@ def iterativeAverage(ki_coords, kj_coords, trajectory_kvalues):
         ki_coord = ki_coords[i]
         
         
-        line=list(bresenham(router[0],router[1],ki_coord[0],ki_coord[1]))
+        line=list(bresenham(ki_coord[0],ki_coord[1],router[0],router[1]))
+
         for coord in line:
-            if coord in kj_coords: kj_startpt
+            if coord in kj_coords: 
+                kj_startpt = coord
+                break
         line_midpoint = midpoint(kj_startpt, ki_coord)
         wall_midpoints.append(line_midpoint)
     wall_midpoints = np.array(wall_midpoints)
     x,y = list(dict.fromkeys(wall_midpoints[:,0])), list(dict.fromkeys(wall_midpoints[:,1]))
-    testrow = np.array([i for i in range(len(wall_midpoints))])
-    print(np.var(x), np.var(y), np.mean(x))
+    print('x variance:', np.var(x), 'y variance:', np.var(y))
     varx, vary = np.var(x), np.var(y)
     wall_coords = []
+    ki_coords = np.array(ki_coords)
     if varx < vary:
-        constant_wall_value = int(np.mean(x))
+        constant_wall_value = int(np.mean(x)) - int(np.mean(x)-min(ki_coords[:,0])+1) 
+        print('x mean:',np.mean(x))
         varying_wall_values = list(y) 
         wall_coords = [(constant_wall_value, int(varying_coord)) for varying_coord in varying_wall_values]
         print(wall_coords)
-        # wall_coords = list(zip(constant_wall_value,varying_wall_values))
         return wall_coords
     if vary < varx:
-        constant_wall_value = int(np.mean(y))
-        varying_wall_values = list(y) 
+        constant_wall_value = int(np.mean(y))  - int(np.mean(y)-min(ki_coords[:,0])+1) 
+        print('y mean:',np.mean(y))
+        varying_wall_values = list(x) 
         wall_coords = [(int(varying_coord),constant_wall_value) for varying_coord in varying_wall_values]
         print(wall_coords)
-        # wall_coords = list(zip(constant_wall_value,varying_wall_values))
         return wall_coords
         
     # print(np.polyfit(testrow, x,1), np.polyfit(testrow, y,1))

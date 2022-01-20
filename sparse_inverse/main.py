@@ -52,7 +52,7 @@ kvis_gridmap = gridMap.plotKVisibilityMap(kvisibility_map_image, showPlot=True)
 gridMap.plotFloorplanGroundTruth()
 
 # Obtain traj-kvals data object scaled to gridmap
-trajectory_endpts_path = "random_trajectories/traj_3.txt" 
+trajectory_endpts_path = "random_trajectories/traj_1.txt" 
 kvisplot_path = "data_processing/kvis_plot.png"
 trajectoryObject = associate_traj_kvals.trajectoryObject(trajectory_endpts_path, kvisplot_path, gridWidth, gridHeight, routerpoint, unscaled_axis_limits, kvaluescolordict, kvis_gridmap)
 trajectory_kvalues = trajectoryObject.getTrajectoryKValuesObject()
@@ -64,8 +64,8 @@ gridMap.plotTrajectory(trajectory_kvalues)
 # =============================================================================
 estimatedMap = grid_map.GridMap('')
 free_space_coords, wall_coords = ray_drawing.wallEstimation(trajectory_kvalues)
-
-estimatedMap.plotFreeSpace(free_space_coords)
 estimatedMap.plotWallCoordinates(wall_coords)
+estimatedMap.plotFreeSpace(free_space_coords)
+
 
 # estimatedMap.plotWallCoordinates(wall_coords)
